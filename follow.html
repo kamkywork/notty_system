@@ -121,15 +121,6 @@
         .loading-state { text-align: center; padding: 40px; color: var(--gray); }
         @keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
         .swal2-file-input { font-size: 14px; margin-top: 10px; }
-
-        /* --- Print Overlay Style --- */
-        #printOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; overflow-y: auto; box-sizing: border-box; }
-        @media print {
-            body * { visibility: hidden; }
-            #printOverlay, #printOverlay * { visibility: visible; }
-            #printOverlay { position: absolute; left: 0; top: 0; display: block !important; padding: 0; margin: 0; height: auto; overflow: visible; }
-            .no-print { display: none !important; }
-        }
     </style>
 </head>
 <body>
@@ -212,8 +203,6 @@
         <div id="contractList"></div>
     </div>
 
-    <div id="printOverlay"></div>
-
     <script>
         // 🔴🔴 ใส่ลิงก์ API ของคุณที่นี่ 🔴🔴
         const API_URL = 'https://script.google.com/macros/s/AKfycbw4DaLprxBN0dxTo2M7i69jAxu7yOKfknQXry6yyxJnEMJLvOSPuvlmMY_TbtNZrGfF/exec'; 
@@ -271,6 +260,7 @@
             const btnShopReport = document.getElementById('btnShopReport');
             if (btnShopReport) btnShopReport.style.display = checkPerm('shop_report') ? 'flex' : 'none';
 
+            // ✅ แก้ไข: ให้เมนูปิดยอด แสดงผลเสมอสำหรับทุกคน
             const btnClosed = document.querySelector('.btn-closed');
             if (btnClosed) btnClosed.style.display = 'inline-flex';
 
@@ -709,120 +699,12 @@
         function userProfile() { Swal.fire({ title: 'ข้อมูลผู้ใช้', html: `<b>${currentUser.name}</b><br>สถานะ: ${currentUser.role}`, showDenyButton: true, confirmButtonText: 'เปลี่ยนรหัสผ่าน', denyButtonText: 'ปิด' }).then(r => { if(r.isConfirmed) changePass(); }); }
         async function changePass() { const { value: p } = await Swal.fire({ title: 'ตั้งรหัสใหม่', input: 'password' }); if(p) { await fetch(API_URL, { method:'POST', body:JSON.stringify({action:'change_password', username:currentUser.username, new_pass:p}) }); Swal.fire('สำเร็จ'); } }
 
-        // [แก้ไข] ฟังก์ชันพิมพ์รายงานแบบ Overlay พร้อมเรียงลำดับและจัดหน้าตาใหม่
         function printReport() {
-            try {
-                // 1. เช็คข้อมูลก่อน
-                if (!filteredData || filteredData.length === 0) { 
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'ไม่มีข้อมูล', 
-                        text: 'กรุณาค้นหา หรือเลือกวันที่ที่มีรายการก่อนสั่งพิมพ์',
-                        confirmButtonColor: '#f39c12'
-                    }); 
-                    return; 
-                }
-
-                // 2. เตรียมวันที่เวลา
-                const now = new Date(); 
-                const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543}`; 
-                const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
-
-                // 3. เรียงลำดับข้อมูล (เพิ่มความปลอดภัย: แปลงเป็น String ก่อนเทียบ ป้องกัน Error)
-                let sortedForPrint = [...filteredData].sort((a, b) => {
-                    let valA = (a.c_no || "").toString(); // ถ้าไม่มีค่า ให้เป็นค่าว่าง
-                    let valB = (b.c_no || "").toString();
-                    return valA.localeCompare(valB, undefined, {numeric: true, sensitivity: 'base'});
-                });
-
-                // 4. สร้าง HTML ของแต่ละแถว
-                let tableRows = sortedForPrint.map((item, index) => { 
-                    let statusColor = item.overdue_count > 0 ? 'color:red;' : 'color:#2980b9;'; 
-                    let statusText = item.status || '-'; 
-                    
-                    if(item.overdue_count > 0) statusText = `ค้าง ${item.overdue_count} งวด`; 
-                    else if(item.status === 'Paid' || item.status === 'Close') statusText = 'ปิดยอดแล้ว'; 
-                    else if(item.status === 'Pending_Approve') statusText = 'รอตรวจสอบ'; 
-                    
-                    return `
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="text-align:center; padding:10px 5px; border-right:1px solid #eee;">${index + 1}</td>
-                            <td style="padding:10px 5px; border-right:1px solid #eee; font-weight:bold;">${item.c_no || '-'}</td>
-                            <td style="padding:10px 5px; border-right:1px solid #eee;">
-                                ${item.b_name || '-'} <br> 
-                                <span style="font-size:11px; color:#666;">${item.b_mobile || ''}</span>
-                            </td>
-                            <td style="text-align:right; padding:10px 5px; border-right:1px solid #eee;">
-                                ${(parseFloat(item.finalAmount) || 0).toLocaleString()}
-                            </td>
-                            <td style="text-align:center; padding:10px 5px; border-right:1px solid #eee; ${statusColor}">
-                                ${statusText}
-                            </td>
-                            <td style="padding:10px 5px; font-size:11px; color:#555;">${item.last_note || '-'}</td>
-                        </tr>`; 
-                }).join('');
-
-                // 5. สร้างหน้าตา Overlay (รายงาน)
-                const reportHtml = `
-                    <div style="font-family: 'Sarabun', sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; background: white; min-height: 100vh;">
-                        <style>
-                            .print-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-                            .print-table th { background-color: #2c3e50 !important; color: white !important; padding: 12px 8px; border: 1px solid #34495e; }
-                            .print-table tr:nth-child(even) { background-color: #f8f9fa !important; }
-                        </style>
-
-                        <div class="no-print" style="text-align:center; margin-bottom:20px; position:sticky; top:0; background:white; padding:15px; border-bottom:1px solid #ddd; z-index:100; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                            <button onclick="window.print()" style="background:#4834d4; color:white; border:none; padding:12px 30px; border-radius:30px; font-size:16px; cursor:pointer; margin-right:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                                <i class="fas fa-print"></i> พิมพ์ / PDF
-                            </button>
-                            <button onclick="document.getElementById('printOverlay').style.display='none'" style="background:#eb4d4b; color:white; border:none; padding:12px 30px; border-radius:30px; font-size:16px; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                                ❌ ปิด
-                            </button>
-                        </div>
-                        
-                        <div style="text-align:center; margin-bottom:20px;">
-                            <h2 style="margin:0; color:#2c3e50; font-size:24px;">รายงานติดตามหนี้</h2>
-                            <div style="font-size:14px; color:#555; margin-top:5px;">
-                                พิมพ์เมื่อ: ${dateStr} เวลา ${timeStr} | จำนวน: ${sortedForPrint.length} รายการ
-                            </div>
-                        </div>
-                        
-                        <table class="print-table">
-                            <thead>
-                                <tr>
-                                    <th width="5%">#</th>
-                                    <th width="15%">เลขสัญญา</th>
-                                    <th width="25%">ชื่อลูกค้า</th>
-                                    <th width="15%">ยอดชำระ</th>
-                                    <th width="15%">สถานะ</th>
-                                    <th width="25%">หมายเหตุ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRows}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                // 6. แสดงผล
-                const overlay = document.getElementById('printOverlay');
-                if(overlay) {
-                    overlay.innerHTML = reportHtml;
-                    overlay.style.display = 'block';
-                } else {
-                    console.error("ไม่พบ Element ID: printOverlay");
-                    alert("ไม่พบพื้นที่แสดงผลรายงาน (printOverlay)");
-                }
-
-            } catch (error) {
-                console.error("Print Error:", error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'รายละเอียด: ' + error.message
-                });
-            }
+            if (!filteredData || filteredData.length === 0) { Swal.fire('ไม่มีข้อมูล', 'ไม่พบรายการที่จะพิมพ์', 'warning'); return; }
+            const now = new Date(); const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543}`; const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
+            let tableRows = filteredData.map((item, index) => { let statusColor = item.overdue_count > 0 ? 'color:red;' : 'color:#2980b9;'; let statusText = item.status; if(item.overdue_count > 0) statusText = `ค้าง ${item.overdue_count} งวด`; else if(item.status === 'Paid' || item.status === 'Close') statusText = 'ปิดยอดแล้ว'; else if(item.status === 'Pending_Approve') statusText = 'รอตรวจสอบ'; return `<tr><td style="text-align:center;">${index + 1}</td><td>${item.c_no}</td><td>${item.b_name} <br> <span style="font-size:10px; color:#666;">${item.b_mobile}</span></td><td style="text-align:right;">${item.finalAmount.toLocaleString()}</td><td style="text-align:center; ${statusColor}">${statusText}</td><td>${item.last_note || '-'}</td></tr>`; }).join('');
+            const htmlContent = `<html><head><title>รายงานติดตามหนี้</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet"><style> body { font-family: 'Sarabun', sans-serif; padding: 20px; } h2 { text-align: center; margin-bottom: 5px; } .meta { text-align: center; font-size: 12px; color: #555; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; font-size: 12px; } th { background: #eee; padding: 6px; border: 1px solid #ccc; } td { padding: 6px; border: 1px solid #ccc; vertical-align: middle; } @media print { button { display: none; } } </style></head><body><h2>รายการติดตามหนี้</h2><div class="meta">พิมพ์เมื่อ: ${dateStr} เวลา ${timeStr} | จำนวน: ${filteredData.length} รายการ</div><table><thead><tr><th width="5%">#</th><th width="15%">เลขสัญญา</th><th width="25%">ชื่อลูกค้า</th><th width="15%">ยอดชำระ</th><th width="15%">สถานะ</th><th width="25%">หมายเหตุ</th></tr></thead><tbody>${tableRows}</tbody></table><script>window.onload = function() { window.print(); }<\/script></body></html>`;
+            let win = window.open('', '_blank'); win.document.write(htmlContent); win.document.close();
         }
 		
 		function showShopTransferReport() {

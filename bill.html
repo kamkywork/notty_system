@@ -373,6 +373,7 @@
 
         var isEditMode = false; 
         var currentTransRef = ""; 
+        var contractUpdateWindow = null; // 🟢 ตัวแปรสำหรับเก็บหน้าต่างอัปเดตสัญญา
 
         // -------------------------------------------------------------
         // 🛠️ UTILITY & MAIN LOGIC
@@ -389,7 +390,7 @@
             
             fetch(`${googleScriptUrl}?action=findBill&book=${book}&no=${no}`, {
     method: 'GET',
-    redirect: 'follow' // ✅ เพิ่มเพื่อให้ตาม Redirect ของ Google
+    redirect: 'follow' 
 })
             .then(r=>r.json())
             .then(d => {
@@ -488,7 +489,7 @@
             const btn = document.querySelector('.btn-import'); const old = btn.innerText; btn.innerText="⏳.."; btn.disabled=true;
             fetch(`${googleScriptUrl}?action=getContractData&c_no=${encodeURIComponent(cNo)}`, {
     method: 'GET',
-    redirect: 'follow' // ✅ เพิ่มเพื่อให้ตาม Redirect ของ Google
+    redirect: 'follow' 
 }).then(r=>r.json()).then(d=>{
                 if(d.status==='success') {
                     document.getElementById('in-contract-no').value = d.c_no;
@@ -525,7 +526,7 @@
             const book = document.getElementById('in-book').value; if(!book) return;
             fetch(`${googleScriptUrl}?action=getLastNo&book=${book}`, {
     method: 'GET',
-    redirect: 'follow' // ✅ เพิ่มเพื่อให้ตาม Redirect ของ Google
+    redirect: 'follow' 
 })
             .then(r=>r.json())
             .then(d=>{ 
@@ -538,10 +539,22 @@
         }
         
         // -------------------------------------------------------------
-        // ✅ แก้ไข: จับภาพ 2 ครั้ง (ย่อ = Clean, เต็ม = Full)
+        // ✅ แก้ไข: จับภาพ 2 ครั้ง + Pre-open Window สำหรับ Mobile
         // -------------------------------------------------------------
         function submitToDatabase() {
             if(!googleScriptUrl) return alert("URL Error");
+
+            // 🟢 เทคนิคแก้ Popup Block: สั่งเปิดหน้าต่างรอไว้ทันทีที่กดปุ่ม
+            const c_no = document.getElementById('in-contract-no').value;
+            if (c_no) {
+                // เปิดหน้าต่างว่างๆ รอไว้ก่อน พร้อมข้อความแจ้งเตือน
+                contractUpdateWindow = window.open('', 'AutoUpdater', 'width=1200,height=800,left=0,top=0');
+                if (contractUpdateWindow) {
+                    contractUpdateWindow.document.write('<html><body style="background:#2c3e50; color:white; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;"><h2>⏳ กำลังเตรียมอัปเดตสัญญา...<br><small>กรุณาอย่าปิดหน้าต่างนี้</small></h2></body></html>');
+                }
+            }
+            // -----------------------------------------------------------
+
             const btn = document.querySelector('.btn-sub-cloud'); 
             const oldText = btn.innerHTML; 
             btn.innerHTML = isEditMode ? "⏳ กำลังแก้ไขและอัปเดต..." : "⏳ กำลังบันทึกและอัปเดต..."; 
@@ -551,25 +564,22 @@
             const slipContainer = document.getElementById('slip-container-paper');
             const hasSlips = document.getElementById('slip-gallery').children.length > 0;
             
-            // เก็บสถานะการแสดงผลเดิม
             const originalSlipDisplay = slipContainer.style.display;
 
-            // ---------------------------------------------------------
-            // 📸 STEP 1: จับภาพแบบ "ย่อ" (Clean Bill - ไม่มีสลิป)
-            // ---------------------------------------------------------
+            // 📸 STEP 1: จับภาพแบบ "ย่อ"
             slipContainer.style.display = 'none';
             paper.classList.add('compact-mode');
 
-            html2canvas(paper, {scale:2, useCORS:true}).then(async cleanCanvas => {
+            // ✅ แก้ไข: เพิ่ม windowWidth: 1200 เพื่อบังคับให้เหมือน PC
+            html2canvas(paper, {scale:2, useCORS:true, windowWidth: 1200}).then(async cleanCanvas => {
                 const cleanBase64 = cleanCanvas.toDataURL("image/jpeg", 0.8).split(',')[1];
 
-                // ---------------------------------------------------------
-                // 📸 STEP 2: จับภาพแบบ "เต็ม" (Full Bill - มีสลิป)
-                // ---------------------------------------------------------
+                // 📸 STEP 2: จับภาพแบบ "เต็ม"
                 paper.classList.remove('compact-mode');
                 if(hasSlips) { slipContainer.style.display = 'flex'; }
 
-                html2canvas(paper, {scale:2, useCORS:true}).then(async fullCanvas => {
+                // ✅ แก้ไข: เพิ่ม windowWidth: 1200
+                html2canvas(paper, {scale:2, useCORS:true, windowWidth: 1200}).then(async fullCanvas => {
                     const fullBase64 = fullCanvas.toDataURL("image/jpeg", 0.8).split(',')[1];
 
                     const p = {
@@ -598,8 +608,8 @@
                         receiver: document.getElementById('in-receiver').value,
                         payMethod: document.getElementById('in-pay-method').value, 
                         
-                        receiptImage: fullBase64,       // ส่งแบบเต็มไป (สำหรับเก็บประวัติหลัก)
-                        cleanReceiptImage: cleanBase64, // ✅ ส่งแบบย่อไป (สำหรับ Export Center)
+                        receiptImage: fullBase64,       
+                        cleanReceiptImage: cleanBase64, 
                         slipImage: "", 
                         transRef: currentTransRef 
                     };
@@ -614,6 +624,7 @@
                         } catch(err) {
                             alert("Error merging images: " + err);
                             btn.innerHTML = oldText; btn.disabled = false;
+                            if(contractUpdateWindow) contractUpdateWindow.close();
                         }
                     } else {
                         if(isEditMode) {
@@ -629,42 +640,47 @@
         }
         
         function sendData(p, b, t) { 
-    fetch(googleScriptUrl, {
-        method: 'POST',
-        body: JSON.stringify(p)
-    })
-    .then(r => r.json()) // เพิ่มบรรทัดนี้เพื่ออ่านค่า JSON
-    .then(() => { 
-        alert(isEditMode ? '✅ แก้ไขข้อมูลเรียบร้อย!' : '✅ บันทึกใบเสร็จสำเร็จ!'); 
-        
-        // 🚀 --- ส่วนที่เพิ่มใหม่: สั่งอัปเดตไฟล์สัญญาอัตโนมัติ ---
-        const contractUrl = "https://kamkywork.github.io/kamkyloancontract-app/"; // ⚠️ เปลี่ยนเป็นลิงก์หน้าสัญญา (C.html) ของคุณ
-        const c_no = document.getElementById('in-contract-no').value; // ดึงเลขที่สัญญาจากช่องกรอก
+            fetch(googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify(p)
+            })
+            .then(r => r.json()) 
+            .then(() => { 
+                alert(isEditMode ? '✅ แก้ไขข้อมูลเรียบร้อย!' : '✅ บันทึกใบเสร็จสำเร็จ!'); 
+                
+                // 🚀 --- ส่วนที่แก้ไขใหม่: ใช้หน้าต่างที่จองไว้ (contractUpdateWindow) ---
+                const contractUrl = "https://kamkywork.github.io/kamkyloancontract-app/"; 
+                const c_no = document.getElementById('in-contract-no').value;
 
-        if (c_no) {
-            // ✅ ปรับขนาดให้กว้างอย่างน้อย 1000px เพื่อให้ Browser ยอมวาดหน้าจอ
-window.open(`${contractUrl}?auto_update=true&c_no=${encodeURIComponent(c_no)}`, 
-            'AutoUpdater', 'width=1200,height=800,left=0,top=0');
-        }
-        // ----------------------------------------------------
+                if (c_no) {
+                    if (contractUpdateWindow) {
+                        // เปลี่ยน URL ของหน้าต่างที่เปิดรอไว้แล้ว -> Browser จะไม่บล็อก
+                        contractUpdateWindow.location.href = `${contractUrl}?auto_update=true&c_no=${encodeURIComponent(c_no)}`;
+                    } else {
+                        // Fallback กรณีเปิดไม่ติดจริงๆ
+                        window.open(`${contractUrl}?auto_update=true&c_no=${encodeURIComponent(c_no)}`, 'AutoUpdater', 'width=1200,height=800');
+                    }
+                }
+                // ----------------------------------------------------
 
-        if(isEditMode) resetToNewMode(); 
-        else { 
-           fetchNextBillNo();
-           document.getElementById('in-slip-file').value = "";
-           document.getElementById('slip-preview-container').innerHTML="";
-           document.getElementById('slip-gallery').innerHTML="";
-           document.getElementById('slip-container-paper').style.display='none';
-           currentTransRef = ""; 
+                if(isEditMode) resetToNewMode(); 
+                else { 
+                    fetchNextBillNo();
+                    document.getElementById('in-slip-file').value = "";
+                    document.getElementById('slip-preview-container').innerHTML="";
+                    document.getElementById('slip-gallery').innerHTML="";
+                    document.getElementById('slip-container-paper').style.display='none';
+                    currentTransRef = ""; 
+                }
+                b.innerHTML = t; b.disabled = false; 
+            })
+            .catch(e => { 
+                alert('❌ Error: ' + e); 
+                b.innerHTML = t; 
+                b.disabled = false; 
+                if(contractUpdateWindow) contractUpdateWindow.close();
+            }); 
         }
-        b.innerHTML = t; b.disabled = false; 
-    })
-    .catch(e => { 
-        alert('❌ Error: ' + e); 
-        b.innerHTML = t; 
-        b.disabled = false; 
-    }); 
-}
         
         function saveAsImage() {
             const paper = document.getElementById("bill-paper"); 
@@ -674,7 +690,8 @@ window.open(`${contractUrl}?auto_update=true&c_no=${encodeURIComponent(c_no)}`,
             slipContainer.style.display = 'none';
             paper.classList.add('compact-mode'); 
 
-            html2canvas(paper, {scale: 2, backgroundColor: "#ffffff"}).then(c => {
+            // ✅ แก้ไข: เพิ่ม windowWidth: 1200
+            html2canvas(paper, {scale: 2, backgroundColor: "#ffffff", windowWidth: 1200}).then(c => {
                 const link = document.createElement('a'); 
                 link.download = `Bill-${document.getElementById('in-book').value}-${document.getElementById('in-no').value}.jpg`;
                 link.href = c.toDataURL("image/jpeg", 0.9); 

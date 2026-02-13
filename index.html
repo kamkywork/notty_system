@@ -15,6 +15,11 @@
         .title { font-size: 18px; font-weight: bold; }
         .desc { font-size: 12px; color: #777; }
     </style>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#4361ee">
 </head>
 <body>
 
@@ -38,5 +43,16 @@
         <div class="desc">Contract Management</div>
     </a>
 
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').then(function(registration) {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+</script>
 </body>
 </html>

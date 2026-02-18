@@ -209,6 +209,10 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbzY856dTYCjYyOqmrQwjns6-KNz-LdbouLTGGwj7IlD9Fjatzxsim1efHwXamjytOtS/exec'; 
         let currentUser = null;
         let currentTrackingData = [], filteredData = [], globalSummary = {};
+        // 🔥 FIX: ประกาศตัวแปร Global เพื่อป้องกัน Error เมื่อกดกล่องสถานะ
+        let contractGroups = { pending: [], normal: [], postpone: [], overdue: [] };
+        let isSearchMode = false;
+
         const toBase64 = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); });
         function linkify(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\]\s]+)/g; return text.replace(urlRegex, function(url) { let downloadUrl = url; if(url.includes('drive.google.com') && url.includes('export=view')) { downloadUrl = url.replace('export=view', 'export=download'); } return `<span style="display:inline-flex; align-items:center; gap:4px; vertical-align:middle; margin-right:5px;"><a href="${url}" target="_blank" style="text-decoration:none; background:#e3f2fd; color:#1565c0; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid #90caf9;"><i class="fas fa-eye"></i> ดู</a><a href="${downloadUrl}" target="_blank" style="text-decoration:none; background:#ffebee; color:#c62828; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid #ef9a9a;" title="บันทึกรูป"><i class="fas fa-save"></i></a></span>`; }); }
 

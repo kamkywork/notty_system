@@ -751,7 +751,7 @@
         }
 
         function exportToExcel() { if (!filteredData.length) return Swal.fire('ไม่มีข้อมูล', 'กรุณาค้นหาหรือเลือกวันที่ก่อน', 'warning'); let csv = "data:text/csv;charset=utf-8,\uFEFFลำดับ,เลขสัญญา,ชื่อ,เบอร์,งวด,ยอด,สถานะ\n"; filteredData.forEach((i, idx) => csv += `${idx+1},"${i.c_no}","${i.b_name}","${i.b_mobile}",${i.installment_no},${i.finalAmount},"${i.status}"\n`); const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Report.csv"; link.click(); }
-        function openPay(c_no) { window.open(`https://kamkywork.github.io/sale_bill/?ref=${c_no}`, '_blank'); }
+        function openPay(c_no) { window.open(`https://kamkywork.github.io/kamkybill-app/?ref=${encodeURIComponent(c_no)}`, '_blank'); }
         
         // 🔥 UPDATE: Admin Menu with Cancel Reason
         async function openManageMenu(idx, name, c_no) { 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ระบบติดตามยอด - Collection System (V.Final Standard)</title>
+    <title>ระบบติดตามยอด - Collection System (V.Final + Cancel Feature)</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,10 +14,10 @@
         :root { 
             --primary: #4361ee;   
             --secondary: #3f37c9; 
-            --success: #00cec9; /* เปลี่ยน Green เป็น Teal/Cyan */  
-            --warning: #e056fd; /* เปลี่ยน Orange เป็น Pink/Purple */
+            --success: #00cec9; 
+            --warning: #e056fd; 
             --danger: #ff4757;    
-            --dark: #2c3e50;    /* เปลี่ยน Black เป็น Midnight Blue */  
+            --dark: #2c3e50;    
             --light: #f8f9fa; 
             --gray: #8d99ae; 
             --bg: #edf2f4; 
@@ -46,8 +46,8 @@
         .btn-reset { background: var(--gray); }
         .btn-daily { background: linear-gradient(135deg, #ff6b6b, #ee5253); }
         .btn-monthly { background: linear-gradient(135deg, #54a0ff, #5f27cd); }
-        .btn-closed { background: #00cec9; } /* Cyan instead of Green */
-        .btn-expense { background: linear-gradient(135deg, #e056fd, #be2edd); } /* Pink/Purple instead of Orange */
+        .btn-closed { background: #00cec9; }
+        .btn-expense { background: linear-gradient(135deg, #e056fd, #be2edd); }
         .btn-logout { background: #e74c3c; width: auto; padding: 0 12px; font-size: 12px; height: 38px; }
         
         .perf-container { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -67,18 +67,18 @@
             position: relative; overflow: hidden;
         }
         .polygon-card:active { transform: scale(0.95); }
-        .poly-bg-pending { background: linear-gradient(135deg, #0984e3, #74b9ff); } /* Blue tone */
-        .poly-bg-normal { background: linear-gradient(135deg, #6c5ce7, #a29bfe); } /* Purple tone */
-        .poly-bg-postpone { background: linear-gradient(135deg, #e056fd, #be2edd); } /* Pink/Purple tone */
-        .poly-bg-overdue { background: linear-gradient(135deg, #d63031, #ff7675); } /* Red tone */
+        .poly-bg-pending { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+        .poly-bg-normal { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+        .poly-bg-postpone { background: linear-gradient(135deg, #e056fd, #be2edd); }
+        .poly-bg-overdue { background: linear-gradient(135deg, #d63031, #ff7675); }
         .poly-count { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 5px; }
         .poly-title { font-size: 14px; font-weight: 600; }
         .poly-icon { font-size: 24px; margin-bottom: 5px; opacity: 0.8; }
 
         .cust-card { border-radius: var(--card-radius); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.05); position: relative; background: white; border-left: 5px solid #b2bec3; transition: 0.2s; animation: slideDown 0.3s ease-out; }
-        .card-postpone { background: #fbf5ff; border-left-color: #e056fd; } /* Pink/Purple */
+        .card-postpone { background: #fbf5ff; border-left-color: #e056fd; } 
         .card-overdue { background: #fff0f0; border-left-color: #ff4757; } 
-        .card-pending-approve { background: #f0faff; border-left-color: #00cec9; } /* Cyan */
+        .card-pending-approve { background: #f0faff; border-left-color: #00cec9; } 
         .card-search-result { border-left-color: #4361ee; background: #f0f4ff; }
         
         .cust-header { padding: 15px 15px 5px 15px; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -86,8 +86,8 @@
         .cust-id { font-size: 11px; color: var(--gray); background: rgba(44, 62, 80, 0.05); padding: 3px 8px; border-radius: 6px; display: inline-block; border: 1px solid rgba(44, 62, 80, 0.1); }
         
         .status-text { font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
-        .text-teal { color: #00cec9; } /* Replaces Green */
-        .text-pink { color: #e056fd; cursor: pointer; text-decoration: underline; } /* Replaces Orange */
+        .text-teal { color: #00cec9; } 
+        .text-pink { color: #e056fd; cursor: pointer; text-decoration: underline; } 
         .text-purple { color: #6c5ce7; } 
         .text-red { color: #ff4757; }
         
@@ -99,10 +99,10 @@
         
         .btn-act, .user-checkbox-btn { border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; height: 42px; width: 100%; box-sizing: border-box; background: white; border: 1px solid #dfe6e9; color: #636e72; }
         .btn-act-call { color: var(--secondary); } 
-        .btn-act-contract { background: #2d3436; color: white; border:none; } /* Dark Grey */
-        .btn-act-info { background: #00cec9; color: white; border:none; } /* Cyan */
-        .btn-act-pay { background: #6c5ce7; color: white; border:none; } /* Purple */
-        .btn-act-postpone { color: #e056fd; } /* Pink/Purple */
+        .btn-act-contract { background: #2d3436; color: white; border:none; }
+        .btn-act-info { background: #00cec9; color: white; border:none; }
+        .btn-act-pay { background: #6c5ce7; color: white; border:none; }
+        .btn-act-postpone { color: #e056fd; }
         .btn-disabled { background: #f1f1f1 !important; color: #b2bec3 !important; border: 1px solid #eee !important; cursor: not-allowed !important; }
         
         .grid-admin-actions { grid-template-columns: 1fr 1fr 1fr 1fr; } .grid-user-actions { grid-template-columns: 1fr 1fr 1fr 1fr; } 
@@ -157,7 +157,7 @@
             
             <button class="btn-pill" style="background: linear-gradient(135deg, #1e3c72, #2a5298);" onclick="showAllContracts()"><i class="fas fa-list"></i> ดูสัญญาทั้งหมด</button>
             
-            <button class="btn-pill btn-closed" onclick="showClosedContracts()"><i class="fas fa-check-double"></i> ปิด/ครบงวด</button>
+            <button class="btn-pill btn-closed" onclick="showClosedContracts()"><i class="fas fa-check-double"></i> ปิด/ครบ/ยกเลิก</button>
             <button id="btnExpense" class="btn-pill btn-expense" style="display:none;" onclick="recordExpense()"><i class="fas fa-file-invoice-dollar"></i> บันทึกรายจ่าย</button>
             <button id="btnShopReport" class="btn-pill" style="background: linear-gradient(135deg, #00cec9, #74b9ff); display:none;" onclick="showShopTransferReport()">
                 <i class="fas fa-money-bill-wave"></i> ยอดโอนร้าน
@@ -206,10 +206,9 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzY856dTYCjYyOqmrQwjns6-KNz-LdbouLTGGwj7IlD9Fjatzxsim1efHwXamjytOtS/exec'; 
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw35dMWaW7gRgfgvjsbHUeKxeF1H93d587qFL1D9zAqDJO9rUyoPv2LS7Inh-qoF9Sx/exec'; 
         let currentUser = null;
         let currentTrackingData = [], filteredData = [], globalSummary = {};
-        // 🔥 FIX: ประกาศตัวแปร Global เพื่อป้องกัน Error เมื่อกดกล่องสถานะ
         let contractGroups = { pending: [], normal: [], postpone: [], overdue: [] };
         let isSearchMode = false;
 
@@ -222,13 +221,11 @@
             else { document.getElementById('filterDate').valueAsDate = new Date(); }
         };
 
-        // 🔥 Login ปกติ + บันทึก Session ลงรายการ
         async function doLogin() {
             const u = document.getElementById('loginUser').value.trim();
             const p = document.getElementById('loginPass').value.trim();
             const msg = document.getElementById('loginMsg');
             if(!u || !p) { msg.innerText = 'กรุณากรอกข้อมูล'; return; }
-            
             msg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ตรวจสอบ...';
             try {
                 const res = await fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({action:'login', username:u, password:p}) });
@@ -240,7 +237,6 @@
             } catch(e) { msg.innerText = 'เชื่อมต่อล้มเหลว'; msg.style.color = '#ff4757'; }
         }
 
-        // 🔥 บันทึก Session ลง LocalStorage (Multi-User)
         function saveSession(user) {
             currentUser = user;
             localStorage.setItem('kamky_user', JSON.stringify(currentUser));
@@ -300,11 +296,9 @@
             loadData();
         }
 
-        // 🔥 หน้าต่างสลับบัญชี (ตัดการแสดง Sale Code ออก)
         function openSwitchAccountModal() {
             let sessions = JSON.parse(localStorage.getItem('kamky_saved_sessions') || "[]");
             let listHtml = `<div style="text-align:left; max-height:300px; overflow-y:auto;">`;
-            
             if (sessions.length === 0) {
                 listHtml += `<div style="text-align:center; color:#999; padding:10px;">ไม่มีบัญชีที่บันทึกไว้</div>`;
             } else {
@@ -313,7 +307,6 @@
                     let bg = isActive ? '#e8f5e9' : '#fff';
                     let border = isActive ? '2px solid #00cec9' : '1px solid #dfe6e9';
                     let icon = isActive ? '<i class="fas fa-check-circle" style="color:#00cec9"></i>' : '<i class="far fa-user-circle"></i>';
-                    
                     listHtml += `
                     <div style="display:flex; justify-content:space-between; align-items:center; background:${bg}; border:${border}; padding:10px; border-radius:8px; margin-bottom:8px;">
                         <div style="display:flex; align-items:center; gap:10px; cursor:pointer; flex-grow:1;" onclick="switchSession('${u.username}')">
@@ -406,7 +399,6 @@
             } catch (error) { console.error("Load Data Error:", error); document.getElementById('contractList').innerHTML = '<div class="loading-state" style="color:red">เชื่อมต่อล้มเหลว กรุณาลองใหม่</div>'; }
         }
 
-        // 🔥 บันทึกรายจ่าย (ตัดตัวเลือกทีมออก Hardcode = Central)
         async function recordExpense() {
             if(!currentUser || currentUser.role !== 'admin') return Swal.fire('Access Denied', 'เฉพาะผู้ดูแลระบบเท่านั้น', 'warning');
             const { value: formValues } = await Swal.fire({
@@ -516,14 +508,15 @@
         
         function showClosedContracts() {
             if(!currentTrackingData || currentTrackingData.length === 0) { alert('กำลังโหลดข้อมูล กรุณารอสักครู่...'); return; }
-            const closedList = currentTrackingData.filter(c => c.status === 'Paid' || c.status === 'Close');
+            // 🔥 Include Cancel status here
+            const closedList = currentTrackingData.filter(c => c.status === 'Paid' || c.status === 'Close' || c.status === 'Cancel');
             filteredData = closedList.map(c => { let amt = parseFloat(c.amount || 0); return { ...c, finalAmount: amt, hasPostpone: false }; });
             isSearchMode = true;
             document.getElementById('statContainer').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'none';
             document.getElementById('polygonContainer').style.display = 'none';
             document.getElementById('searchResultTitle').style.display = 'block';
-            document.getElementById('txtSearchKeyword').innerText = `รายการปิดสัญญา/ครบงวด (${closedList.length} รายการ)`;
+            document.getElementById('txtSearchKeyword').innerText = `รายการปิดสัญญา/ครบงวด/ยกเลิก (${closedList.length} รายการ)`;
             renderDirectList(closedList);
         }
 
@@ -538,7 +531,7 @@
             document.getElementById('txtSearchKeyword').innerText = `สัญญาทั้งหมด (${currentTrackingData.length} รายการ) - เรียงตามสถานะ`;
             let sortedData = [...currentTrackingData].sort((a, b) => {
                 const getPriority = (c) => {
-                    const isClosed = (c.status === 'Paid' || c.status === 'Close');
+                    const isClosed = (c.status === 'Paid' || c.status === 'Close' || c.status === 'Cancel');
                     const isBadDebt = (c.overdue_count >= 3); 
                     if (isBadDebt) return 4; if (isClosed) return 3; if (c.overdue_count > 0) return 2; return 1; 
                 }; return getPriority(a) - getPriority(b);
@@ -548,9 +541,10 @@
                 let statusSuffix = "";
                 if (c.overdue_count >= 3) statusSuffix = " (หนี้เสีย)";
                 else if (c.status === 'Paid' || c.status === 'Close') statusSuffix = " (ปิดยอด)";
+                else if (c.status === 'Cancel') statusSuffix = " (ยกเลิก)";
                 else if (c.overdue_count > 0) statusSuffix = ` (ค้าง ${c.overdue_count})`;
                 else statusSuffix = " (ปกติ)";
-                return { ...c, b_name: `${c.b_name} <span style="font-size:12px; font-weight:bold; color:${statusSuffix.includes('ปกติ')?'#00cec9':(statusSuffix.includes('ปิด')?'blue':'red')}">${statusSuffix}</span>`, finalAmount: amt, hasPostpone: (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "") };
+                return { ...c, b_name: `${c.b_name} <span style="font-size:12px; font-weight:bold; color:${statusSuffix.includes('ปกติ')?'#00cec9':(statusSuffix.includes('ปิด')||statusSuffix.includes('ยกเลิก')?'blue':'red')}">${statusSuffix}</span>`, finalAmount: amt, hasPostpone: (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "") };
             });
             renderDirectList(filteredData);
         }
@@ -585,14 +579,15 @@
             if (data.contracts) {
                 data.contracts.forEach(c => {
                     const amount = parseFloat(c.amount || 0);
-                    const isPaid = ['Paid', 'Close', 'รอปิดยอด'].includes(c.status);
+                    // 🔥 Exclude Cancel from dashboard
+                    const isPaid = ['Paid', 'Close', 'รอปิดยอด', 'Cancel'].includes(c.status);
                     const isPostponedToToday = (c.postpone_date === selectedDateThai);
                     const isDueToday = (c.due_date === selectedDateThai);
                     const hasPostpone = (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "");
                     const isPendingStatus = ['Pending_Approve', 'รอตรวจสอบ', 'รอปิดยอด'].includes(c.status);
                     let isTargetToday = (isPostponedToToday) || (isDueToday && !hasPostpone);
-                    if (isTargetToday && isPaid) strictDailyCollected += amount;
-                    if (c.due_date) { const parts = c.due_date.split('/'); if(parts.length === 3) { const cMonthStr = `${parts[2]}-${parts[1]}`; if (cMonthStr === selectedMonthStr && isPaid) strictMonthlyCollected += amount; } }
+                    if (isTargetToday && isPaid && c.status !== 'Cancel') strictDailyCollected += amount;
+                    if (c.due_date) { const parts = c.due_date.split('/'); if(parts.length === 3) { const cMonthStr = `${parts[2]}-${parts[1]}`; if (cMonthStr === selectedMonthStr && isPaid && c.status !== 'Cancel') strictMonthlyCollected += amount; } }
                     if (hidden.includes(String(c.c_no))) return;
                     if (isPaid) return; 
                     let amt = parseFloat(c.amount) * (c.overdue_count > 1 ? c.overdue_count : 1);
@@ -638,6 +633,7 @@
             let statusHtml = `<span class="status-text text-teal"><i class="fas fa-check-circle"></i> ปกติ</span>`;
             let hasPaymentNote = c.last_note && c.last_note.includes('แจ้งชำระ');
             const isClosed = (c.status === 'Paid' || c.status === 'Close');
+            
             if (c.status === 'Pending_Approve' || c.status === 'รอตรวจสอบ') { 
                 cardClass = "card-pending-approve"; 
                 if(isAdmin) statusHtml = `<span class="status-text text-pink" onclick="adminApprove('${c.c_no}', ${c.row_index}, '${c.request_date}', '${c.last_note || ''}', 'postpone')">⏳ รอตรวจสอบ (กด)</span>`; 
@@ -650,10 +646,12 @@
             }
             else if (c.hasPostpone) { cardClass = "card-postpone"; statusHtml = `<span class="status-text text-purple">⏰ เลื่อน: ${c.postpone_date}</span>`; } 
             else if (c.overdue_count > 0) { cardClass = "card-overdue"; statusHtml = `<span class="status-text text-red">❗ ค้าง ${c.overdue_count} งวด</span>`; }
+            else if (c.status === 'Cancel') { cardClass = "card-search-result"; statusHtml = `<span class="status-text" style="color:#636e72;"><i class="fas fa-ban"></i> ยกเลิกสัญญาแล้ว</span>`; }
             else if (isClosed) { statusHtml = `<span class="status-text text-teal">✅ ปิดบัญชีแล้ว (${c.last_payment_date})</span>`; }
+            
             if (hasPaymentNote) { let noteContent = linkify(c.last_note); statusHtml += `<div style="font-size:11px; color:#4361ee; background:#eef2ff; padding:6px; border-radius:4px; margin-top:4px; border:1px solid #dce6ff; white-space:normal; word-break:break-all;">💰 ${noteContent}</div>`; }
             let financialHtml = '';
-            let profitClass = c.current_profit >= 0 ? 'color:#00cec9;' : 'color:#c0392b;'; /* Cyan for profit */
+            let profitClass = c.current_profit >= 0 ? 'color:#00cec9;' : 'color:#c0392b;'; 
             let profitIcon = c.current_profit >= 0 ? '📈 กำไร' : '📉 ยังไม่คืนทุน';
             let progressPercent = 0;
             if (c.product_cost > 0) { progressPercent = (c.total_revenue / c.product_cost) * 100; } else { progressPercent = 100; }
@@ -677,7 +675,7 @@
             const hasExtraInfo = (c.contact_image && c.contact_image !== "" && c.contact_image !== "-");
             const infoBtn = hasExtraInfo ? `<button class="btn-act btn-act-info" onclick="openContactImage('${c.c_no}')"><i class="fas fa-address-card"></i> ข้อมูลเพิ่มเติม</button>` : `<button class="btn-act btn-disabled" disabled><i class="fas fa-address-card"></i> ข้อมูลเพิ่มเติม</button>`;
             const contractBtn = `<button class="btn-act btn-act-contract" onclick="openContractPopup('${c.c_no}')"><i class="fas fa-file-contract"></i> สัญญา</button>`;
-            if (isClosed) {
+            if (isClosed || c.status === 'Cancel') {
                 gridClass = 'grid-closed-actions';
                 actionButtonsHtml = `${infoBtn}${contractBtn}`;
             } else {
@@ -754,7 +752,35 @@
 
         function exportToExcel() { if (!filteredData.length) return Swal.fire('ไม่มีข้อมูล', 'กรุณาค้นหาหรือเลือกวันที่ก่อน', 'warning'); let csv = "data:text/csv;charset=utf-8,\uFEFFลำดับ,เลขสัญญา,ชื่อ,เบอร์,งวด,ยอด,สถานะ\n"; filteredData.forEach((i, idx) => csv += `${idx+1},"${i.c_no}","${i.b_name}","${i.b_mobile}",${i.installment_no},${i.finalAmount},"${i.status}"\n`); const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Report.csv"; link.click(); }
         function openPay(c_no) { window.open(`https://kamkywork.github.io/sale_bill/?ref=${c_no}`, '_blank'); }
-        async function openManageMenu(idx, name, c_no) { const { value: action } = await Swal.fire({ title: name, input: 'select', inputOptions: { 'cancel_contract': '❌ ยกเลิกสัญญา', 'close_account': '✅ ปิดยอด' }, showCancelButton: true }); if(action){ Swal.fire({title:'ยืนยัน?',showCancelButton:true}).then(r=>{if(r.isConfirmed) executeAction({action,c_no,row_index:idx})}); } }
+        
+        // 🔥 UPDATE: Admin Menu with Cancel Reason
+        async function openManageMenu(idx, name, c_no) { 
+            const { value: action } = await Swal.fire({ 
+                title: name, 
+                input: 'select', 
+                inputOptions: { 'cancel_contract': '❌ ยกเลิกสัญญา', 'close_account': '✅ ปิดยอด' }, 
+                showCancelButton: true 
+            }); 
+            
+            if(action){ 
+                if (action === 'cancel_contract') {
+                    const { value: reason } = await Swal.fire({
+                        title: 'ระบุเหตุผลการยกเลิก',
+                        input: 'text',
+                        inputPlaceholder: 'เช่น ลูกค้าคืนสินค้า, ข้อมูลผิดพลาด',
+                        showCancelButton: true,
+                        inputValidator: (value) => { if (!value) return 'กรุณาระบุเหตุผล!'; }
+                    });
+                    if (reason) {
+                        Swal.fire({ title: 'ยืนยันยกเลิกสัญญา?', text: `เหตุผล: ${reason}`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'ยืนยันยกเลิก' })
+                        .then(r => { if (r.isConfirmed) executeAction({ action, c_no, row_index: idx, reason: reason }); });
+                    }
+                } else {
+                    Swal.fire({title:'ยืนยัน?',showCancelButton:true}).then(r=>{if(r.isConfirmed) executeAction({action,c_no,row_index:idx})}); 
+                }
+            } 
+        }
+
         async function executeAction(p) { Swal.fire({ title: 'บันทึก...', didOpen: () => Swal.showLoading() }); try { await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); Swal.fire({ icon: 'success', title: 'สำเร็จ', timer: 1000, showConfirmButton: false }); loadData(); } catch (e) { Swal.fire('Error', 'ผิดพลาด', 'error'); } }
         function userProfile() { Swal.fire({ title: 'ข้อมูลผู้ใช้', html: `<b>${currentUser.name}</b><br>สถานะ: ${currentUser.role}`, showDenyButton: true, confirmButtonText: 'เปลี่ยนรหัสผ่าน', denyButtonText: 'ปิด' }).then(r => { if(r.isConfirmed) changePass(); }); }
         async function changePass() { const { value: p } = await Swal.fire({ title: 'ตั้งรหัสใหม่', input: 'password' }); if(p) { await fetch(API_URL, { method:'POST', body:JSON.stringify({action:'change_password', username:currentUser.username, new_pass:p}) }); Swal.fire('สำเร็จ'); } }

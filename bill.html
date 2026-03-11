@@ -368,7 +368,7 @@
         // -------------------------------------------------------------
         // ⚙️ CONFIG & API SETUP
         // -------------------------------------------------------------
-        var googleScriptUrl = "https://script.google.com/macros/s/AKfycbzY856dTYCjYyOqmrQwjns6-KNz-LdbouLTGGwj7IlD9Fjatzxsim1efHwXamjytOtS/exec"; 
+        var googleScriptUrl = "https://script.google.com/macros/s/AKfycbwSvSad7t7dTWGJ6GPrngr8biIXRnLx8UjUKbszwctwmIcKfhIx_etOy66u3nWgQug/exec"; 
         const SLIP_API_KEY = "cc337cb2-f35b-40b1-a92d-0ed556755722";
 
         var isEditMode = false; 
@@ -821,7 +821,8 @@
 
                     } else if (d.status === 'duplicate_db') {
                         statusEl.className = 'slip-status status-fail';
-                        statusEl.innerHTML = "🚨 สลิปซ้ำ";
+                        // แปลง \n เป็น <br> เพื่อให้ขึ้นบรรทัดใหม่ในหน้าต่างแจ้งเตือนและข้อความใต้รูป
+                        statusEl.innerHTML = d.message.replace(/\n/g, '<br>');
                         alert(d.message); 
                     } else {
                         statusEl.className = 'slip-status status-fail';

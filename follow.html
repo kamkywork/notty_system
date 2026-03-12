@@ -587,14 +587,18 @@
             let hasPaymentNote = c.last_note && c.last_note.includes('แจ้งชำระ');
             const isClosed = (c.status === 'Paid' || c.status === 'Close');
             
+            // 🟢 เคลียร์อักขระพิเศษเพื่อป้องกันบั๊ก HTML พังเวลาครอบตัวแปรใน attribute onclick
+            let safeNote = (c.last_note || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
+            let safeReqDate = c.request_date || '-';
+
             if (c.status === 'Pending_Approve' || c.status === 'รอตรวจสอบ') { 
                 cardClass = "card-pending-approve"; 
-                if(isAdmin) statusHtml = `<span class="status-text text-purple" onclick="adminApprove('${c.c_no}', ${c.row_index}, '${c.request_date}', '${c.last_note || ''}', 'postpone')">⏳ รอตรวจสอบ (กด)</span>`; 
+                if(isAdmin) statusHtml = `<span class="status-text text-purple" style="cursor:pointer;" onclick="adminApprove('${c.c_no}', ${c.row_index}, '${safeReqDate}', '${safeNote}', 'postpone')">⏳ รอตรวจสอบ (กด)</span>`; 
                 else statusHtml = `<span class="status-text text-purple">⏳ รอตรวจสอบ</span>`; 
             } 
             else if (c.status === 'รอปิดยอด') { 
                 cardClass = "card-pending-approve"; 
-                if(isAdmin) statusHtml = `<span class="status-text text-red" style="cursor:pointer;" onclick="adminApprove('${c.c_no}', ${c.row_index}, '-', '${c.last_note || ''}', 'close')">🏁 รอปิดยอด (กดอนุมัติ)</span>`; 
+                if(isAdmin) statusHtml = `<span class="status-text text-red" style="cursor:pointer;" onclick="adminApprove('${c.c_no}', ${c.row_index}, '-', '${safeNote}', 'close')">🏁 รอปิดยอด (กดอนุมัติ)</span>`; 
                 else statusHtml = `<span class="status-text text-red">🏁 รออนุมัติปิดยอด</span>`; 
             }
             else if (c.hasPostpone) { cardClass = "card-postpone"; statusHtml = `<span class="status-text text-darkpurple">⏰ เลื่อน: ${c.postpone_date}</span>`; } 
@@ -653,7 +657,42 @@
         async function userAddNote(cNo) { Swal.fire({input:'text', title:'บันทึก'}).then(r=>{if(r.value) sendUserRequest('add_daily_note', cNo, {note:r.value});}); }
         async function sendUserRequest(act, cNo, pl) { Swal.showLoading(); try { await fetch(API_URL, { method:'POST', body:JSON.stringify({ action:'user_action_log', sub_action:act, c_no:cNo, user:currentUser.username, ...pl }) }); Swal.fire({icon:'success', title:'บันทึกสำเร็จ', timer:1500, showConfirmButton:false}); loadData(); } catch(e) { Swal.fire('Error', 'ส่งข้อมูลล้มเหลว', 'error'); } }
 
-        async function adminApprove(cNo, rowIndex, reqDate, details, type) { /* คงฟังก์ชันเดิม */ }
+        // 🟢 เพิ่มฟังก์ชัน adminApprove แบบทำงานเต็มรูปแบบ
+        async function adminApprove(cNo, rowIndex, reqDate, details, type) { 
+            let title = type === 'close' ? 'อนุมัติปิดยอด?' : 'อนุมัติรายการ?';
+            let actionName = type === 'close' ? 'close_account' : 'approve_contract';
+            let confirmBtn = type === 'close' ? 'ยืนยันปิดยอด' : 'อนุมัติ';
+            
+            Swal.fire({
+                title: title,
+                html: `<div style="font-size:14px; color:var(--gray); margin-bottom:10px;">เลขสัญญา: ${cNo}</div><div style="font-size:13px; text-align:left; background:#f4f6f8; padding:10px; border-radius:8px;">${details || 'ไม่มีรายละเอียดเพิ่มเติม'}</div>`,
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: confirmBtn,
+                denyButtonText: 'ปฏิเสธ (ตีกลับ)',
+                cancelButtonText: 'ปิด',
+                confirmButtonColor: '#0097e6',
+                denyButtonColor: '#b30000'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeAction({ action: actionName, row_index: rowIndex, c_no: cNo });
+                } else if (result.isDenied) {
+                    Swal.fire({
+                        title: 'เหตุผลที่ปฏิเสธ',
+                        input: 'text',
+                        showCancelButton: true,
+                        confirmButtonText: 'ยืนยันตีกลับ',
+                        cancelButtonText: 'ยกเลิก',
+                        confirmButtonColor: '#b30000'
+                    }).then((val) => {
+                        if (val.isConfirmed) {
+                            executeAction({ action: 'reject_request', row_index: rowIndex, reason: val.value || 'ไม่ระบุ' });
+                        }
+                    });
+                }
+            });
+        }
+
         function openPostpone(idx, name, currentVal) { Swal.fire({ title: 'จัดการนัดหมาย', html: `<div style="margin-bottom:10px; color:var(--dark);">เดิม: <b>${currentVal || '-'}</b></div><input type="date" id="swal-date" class="swal2-input">`, showDenyButton: true, showCancelButton: true, confirmButtonText: 'บันทึก', denyButtonText: 'ลบนัดหมาย', cancelButtonText: 'ปิด', confirmButtonColor: '#800000' }).then(r => { if (r.isConfirmed) executeAction({ action: 'postpone', row_index: idx, new_date: document.getElementById('swal-date').value }); else if (r.isDenied) executeAction({ action: 'postpone', row_index: idx, new_date: '' }); }); }
         
         async function openContractPopup(cNo) { /* คงฟังก์ชันเดิม */ }

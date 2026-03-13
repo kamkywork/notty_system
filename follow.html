@@ -68,11 +68,9 @@
         .sidebar-btn.logout i { color: var(--danger); }
 
         /* Header Styles */
-        /* 🟢 เปลี่ยนสีพื้นหลัง Head เป็นแดงโทนอ่อน */
         .header { background: #ffe4e4; padding: 15px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(43,0,0,0.08); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; border-bottom: 1px solid #ffcccc; }
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         
-        /* 🟢 เปลี่ยนสีปุ่ม 3 ขีด เป็นแดงเลือดหมูสว่าง */
         .menu-toggle { font-size: 24px; color: #ff4d4d; cursor: pointer; background: none; border: none; padding: 0; margin-right: 10px; transition: 0.2s; display: flex; align-items: center; }
         .menu-toggle:active { transform: scale(0.9); }
         #appTitle { margin: 0; font-size: 18px !important; font-weight: 700; color: var(--primary) !important; display: flex; align-items: center; gap: 8px; }
@@ -106,7 +104,6 @@
         .list-container { padding: 0 20px 80px 20px; max-width: 800px; margin: 0 auto; }
         .polygon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; margin-top: 15px; }
         
-        /* 🟢 ปรับโพลิกอนให้แยกสีชัดเจนและมีสีพื้นหลังเฉพาะตัว */
         .polygon-card { 
             border-radius: 16px; padding: 15px; cursor: pointer; transition: all 0.3s ease; 
             text-align: center; box-shadow: 0 4px 15px rgba(43,0,0,0.08); display: flex; flex-direction: column; 
@@ -523,16 +520,19 @@
             document.getElementById('contractListHeading').style.display = 'none';
             filteredData = [];
             const hidden = JSON.parse(localStorage.getItem('hiddenContracts') || '[]').map(String);
+            
             const selectedDateThai = selectedDate ? formatDateToThai(selectedDate) : "";
             let selectedYearTH = ""; let selectedMonthOnly = "";
             if(selectedDate) { let d = new Date(selectedDate); selectedYearTH = d.getFullYear() + 543; selectedMonthOnly = ("0" + (d.getMonth() + 1)).slice(-2); }
             const selectedMonthStr = `${selectedYearTH}-${selectedMonthOnly}`; 
+            
             contractGroups = { pending: [], normal: [], postpone: [], overdue: [] };
             let strictDailyCollected = 0; let strictMonthlyCollected = 0;
             const dashboard = document.getElementById('adminDashboard');
             const boxCost = document.getElementById('boxCost');     
             const cardDaily = document.getElementById('cardDaily'); 
             dashboard.style.display = 'grid'; 
+            
             if (currentUser && currentUser.role === 'admin') {
                 boxCost.style.display = 'block';
                 dashboard.style.gridTemplateColumns = '1fr 1fr';
@@ -542,6 +542,7 @@
                 dashboard.style.gridTemplateColumns = '1fr';
                 if(cardDaily) cardDaily.style.display = 'none';
             }
+            
             if (data.contracts) {
                 data.contracts.forEach(c => {
                     const amount = parseFloat(c.amount || 0);
@@ -551,22 +552,58 @@
                     const hasPostpone = (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "");
                     const isPendingStatus = ['Pending_Approve', 'รอตรวจสอบ', 'รอปิดยอด'].includes(c.status);
                     let isTargetToday = (isPostponedToToday) || (isDueToday && !hasPostpone);
+                    
                     if (isTargetToday && isPaid && c.status !== 'Cancel') strictDailyCollected += amount;
                     if (c.due_date) { const parts = c.due_date.split('/'); if(parts.length === 3) { const cMonthStr = `${parts[2]}-${parts[1]}`; if (cMonthStr === selectedMonthStr && isPaid && c.status !== 'Cancel') strictMonthlyCollected += amount; } }
                     if (hidden.includes(String(c.c_no))) return;
                     if (isPaid) return; 
+                    
                     let amt = parseFloat(c.amount) * (c.overdue_count > 1 ? c.overdue_count : 1);
-                    if (c.original_due_date !== selectedDateThai && c.postpone_date === selectedDateThai) { c.worksheetStatus = `เลื่อนมาจาก ${c.original_due_date}`; } else { if (isPendingStatus) { c.worksheetStatus = c.status === 'รอปิดยอด' ? 'รอปิดยอด' : 'รอตรวจสอบ'; } else { c.worksheetStatus = c.overdue_count > 0 ? 'ค้างชำระ' : 'ปกติ'; } }
+                    if (c.original_due_date !== selectedDateThai && c.postpone_date === selectedDateThai) { 
+                        c.worksheetStatus = `เลื่อนมาจาก ${c.original_due_date}`; 
+                    } else { 
+                        if (isPendingStatus) { c.worksheetStatus = c.status === 'รอปิดยอด' ? 'รอปิดยอด' : 'รอตรวจสอบ'; } 
+                        else { c.worksheetStatus = c.overdue_count > 0 ? 'ค้างชำระ' : 'ปกติ'; } 
+                    }
                     let item = { ...c, finalAmount: amt, hasPostpone: hasPostpone };
                     filteredData.push(item);
-                    if (isPendingStatus) { if (currentUser.role === 'admin' || !isPendingStatus) contractGroups.pending.push(item); } 
-                    else if (isPostponedToToday) { contractGroups.postpone.push(item); }
-                    else if (c.overdue_count > 0) { contractGroups.overdue.push(item); } 
-                    else if (isTargetToday) { contractGroups.normal.push(item); }
+                    
+                    // 🟢 โลจิกใหม่: ป้องกันการแสดงในช่อง "เกินกำหนด" หากยังมีวันเลื่อนนัดที่ใช้งานได้อยู่
+                    let isOverdue = (c.overdue_count > 0);
+                    if (isOverdue && hasPostpone) {
+                        let pParts = c.postpone_date.split('/');
+                        if (pParts.length === 3) {
+                            // แปลงวันที่เลื่อนนัดเป็น Date Object
+                            let pDate = new Date(parseInt(pParts[2]) - 543, parseInt(pParts[1]) - 1, parseInt(pParts[0]));
+                            let tDate = selectedDate ? new Date(selectedDate) : new Date();
+                            tDate.setHours(0,0,0,0);
+                            // หากวันที่เลื่อนนัดยังมาไม่ถึง (อนาคต) หรือเป็นวันนี้ จะไม่ถือว่าเกินกำหนด
+                            if (pDate >= tDate) {
+                                isOverdue = false;
+                            }
+                        } else {
+                            isOverdue = false;
+                        }
+                    }
+
+                    // จัดกลุ่มสัญญาเพื่อแสดงใน Dashboard
+                    if (isPendingStatus) { 
+                        if (currentUser.role === 'admin' || !isPendingStatus) contractGroups.pending.push(item); 
+                    } 
+                    else if (isPostponedToToday) { 
+                        contractGroups.postpone.push(item); 
+                    }
+                    else if (isOverdue) { 
+                        contractGroups.overdue.push(item); 
+                    } 
+                    else if (isTargetToday) { 
+                        contractGroups.normal.push(item); 
+                    }
                 });
             }
             updateCharts(0, strictDailyCollected, 0, strictMonthlyCollected);
             if (data.summary && data.summary.commission !== undefined) { const commEl = document.getElementById('txtCommission'); if(commEl) commEl.innerText = (data.summary.commission || 0).toLocaleString(); }
+            
             if (contractGroups.pending.length > 0 && currentUser.role === 'admin') { polyContainer.innerHTML += createPolygonHtml('pending', 'รอตรวจสอบ', contractGroups.pending.length, 'poly-bg-pending', 'fas fa-clock'); }
             polyContainer.innerHTML += createPolygonHtml('normal', 'ปกติ (วันนี้)', contractGroups.normal.length, 'poly-bg-normal', 'fas fa-calendar-check');
             polyContainer.innerHTML += createPolygonHtml('postpone', 'เลื่อนนัด', contractGroups.postpone.length, 'poly-bg-postpone', 'fas fa-history');
@@ -599,7 +636,6 @@
             let hasPaymentNote = c.last_note && c.last_note.includes('แจ้งชำระ');
             const isClosed = (c.status === 'Paid' || c.status === 'Close');
             
-            // 🟢 เคลียร์อักขระพิเศษเพื่อป้องกันบั๊ก HTML พังเวลาครอบตัวแปรใน attribute onclick
             let safeNote = (c.last_note || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
             let safeReqDate = c.request_date || '-';
 
@@ -663,7 +699,6 @@
             return `<div class="cust-card ${cardClass}"><div class="cust-header"><div class="cust-info"><h3>${c.b_name}</h3><span class="cust-id">#${c.c_no}</span></div><div class="status-badge">${statusHtml}</div>${menuButton}</div><div class="cust-body"><div><div class="contact-line"><i class="fas fa-phone"></i> ${c.b_mobile}</div><div class="contact-line">งวดที่ ${c.installment_no}</div></div><div style="text-align:right"><span style="font-size:10px; color:var(--gray);">ยอดชำระ</span><div class="amount-val">฿${c.finalAmount.toLocaleString()}</div></div></div> ${financialHtml} <div class="cust-actions ${gridClass}">${actionButtonsHtml}</div></div>`;
         }
 
-        // 🟢 อัปเกรดระบบส่งข้อมูล
         async function sendUserRequest(act, cNo, pl) { 
             Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
             try { 
@@ -689,7 +724,6 @@
             } 
         }
 
-        // 🟢 เพิ่มช่องอัปโหลดสลิป (เลือกได้ ไม่บังคับ)
         async function userReqPay(cNo) { 
             const { value: formValues } = await Swal.fire({
                 title: 'แจ้งชำระเงิน',
@@ -727,7 +761,6 @@
             }
         }
 
-        // 🟢 เพิ่มช่องอัปโหลดสลิป (บังคับแนบสลิป)
         async function userReqClose(cNo) { 
             const { value: formValues } = await Swal.fire({
                 title: 'ขอปิดยอด',
@@ -771,7 +804,6 @@
         async function userReqPostpone(cNo) { Swal.fire({title:'ขอเลื่อนนัด', input:'date'}).then(r=>{if(r.value) sendUserRequest('request_postpone', cNo, {new_date:r.value});}); }
         async function userAddNote(cNo) { Swal.fire({input:'text', title:'บันทึก'}).then(r=>{if(r.value) sendUserRequest('add_daily_note', cNo, {note:r.value});}); }
 
-        // 🟢 เพิ่มฟังก์ชัน adminApprove แบบทำงานเต็มรูปแบบ
         async function adminApprove(cNo, rowIndex, reqDate, details, type) { 
             let title = type === 'close' ? 'อนุมัติปิดยอด?' : 'อนุมัติรายการ?';
             let actionName = type === 'close' ? 'close_account' : 'approve_contract';
@@ -809,7 +841,6 @@
 
         function openPostpone(idx, name, currentVal) { Swal.fire({ title: 'จัดการนัดหมาย', html: `<div style="margin-bottom:10px; color:var(--dark);">เดิม: <b>${currentVal || '-'}</b></div><input type="date" id="swal-date" class="swal2-input">`, showDenyButton: true, showCancelButton: true, confirmButtonText: 'บันทึก', denyButtonText: 'ลบนัดหมาย', cancelButtonText: 'ปิด', confirmButtonColor: '#800000' }).then(r => { if (r.isConfirmed) executeAction({ action: 'postpone', row_index: idx, new_date: document.getElementById('swal-date').value }); else if (r.isDenied) executeAction({ action: 'postpone', row_index: idx, new_date: '' }); }); }
         
-        // 🟢 ฟังก์ชันช่วยแปลงลิงก์ Google Drive ให้อยู่ในโหมด Preview (สำหรับฝัง iframe)
         function getDrivePreviewUrl(url) {
             if (!url) return '';
             let fileId = '';
@@ -824,7 +855,6 @@
             return url;
         }
 
-        // 🟢 เปิดดูสัญญาแบบฝัง iframe (ตามดีไซน์ในรูปภาพ)
         async function openContractPopup(cNo) { 
             Swal.fire({ title: 'กำลังโหลดข้อมูล...', didOpen: () => { Swal.showLoading(); }});
             try {
@@ -854,7 +884,6 @@
             }
         }
 
-        // 🟢 เปิดดูข้อมูลลูกค้าแบบฝัง iframe
         async function openContactImage(cNo) { 
             Swal.fire({ title: 'กำลังโหลดข้อมูล...', didOpen: () => { Swal.showLoading(); }});
             try {

@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* CSS Style - Maroon Theme (No Black, No Green, No Orange) */
+        /* CSS Style - Maroon Theme */
         :root { 
             --primary: #800000;   /* แดงเลือดหมูหลัก */
             --secondary: #4d0000; /* แดงเลือดหมูเข้ม */
@@ -26,8 +26,7 @@
         
         body { 
             font-family: 'Sarabun', sans-serif; 
-            /* สีแดงเลือดหมูไล่เฉด */
-            background: linear-gradient(135deg, #2b0000 0%, #660000 50%, #a30000 100%); 
+            background: #f4f6f8; 
             background-attachment: fixed;
             margin: 0; padding: 0; 
             color: var(--dark); 
@@ -38,9 +37,9 @@
         .sidebar { 
             position: fixed; 
             top: 0; 
-            left: -350px; /* ปรับระยะซ่อนให้ลึกขึ้น ไม่ให้ขอบโผล่ */
+            left: -350px; 
             width: 280px; 
-            box-sizing: border-box; /* เพิ่มคำสั่งนี้เพื่อไม่ให้ padding ดันขนาดกล่องจนล้น */
+            box-sizing: border-box; 
             height: 100%; 
             background: #ffffff; 
             box-shadow: 4px 0 20px rgba(43,0,0,0.3); 
@@ -69,9 +68,12 @@
         .sidebar-btn.logout i { color: var(--danger); }
 
         /* Header Styles */
-        .header { background: rgba(255, 255, 255, 0.98); padding: 15px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(43,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+        /* 🟢 เปลี่ยนสีพื้นหลัง Head เป็นแดงโทนอ่อน */
+        .header { background: #ffe4e4; padding: 15px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(43,0,0,0.08); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; border-bottom: 1px solid #ffcccc; }
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .menu-toggle { font-size: 24px; color: var(--primary); cursor: pointer; background: none; border: none; padding: 0; margin-right: 10px; transition: 0.2s; display: flex; align-items: center; }
+        
+        /* 🟢 เปลี่ยนสีปุ่ม 3 ขีด เป็นแดงเลือดหมูสว่าง */
+        .menu-toggle { font-size: 24px; color: #ff4d4d; cursor: pointer; background: none; border: none; padding: 0; margin-right: 10px; transition: 0.2s; display: flex; align-items: center; }
         .menu-toggle:active { transform: scale(0.9); }
         #appTitle { margin: 0; font-size: 18px !important; font-weight: 700; color: var(--primary) !important; display: flex; align-items: center; gap: 8px; }
         
@@ -82,18 +84,19 @@
         .btn-search-action { background: var(--primary); color: white; border: none; padding: 0 16px; height: 100%; min-height: 42px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
         .btn-search-action:active { background: var(--secondary); transform: scale(0.95); }
         
-        .date-input { border: 1px solid #e0e6ed; background: #f4f6f8; padding: 8px 12px; border-radius: 12px; font-family: 'Sarabun'; color: var(--dark); outline: none; transition: 0.3s; width: 120px; }
+        .date-input { border: 1px solid #e0e6ed; background: #ffffff; padding: 8px 12px; border-radius: 12px; font-family: 'Sarabun'; color: var(--dark); outline: none; transition: 0.3s; width: 120px; }
         .date-input:focus { border-color: var(--primary); background: #fff; }
         .btn-refresh { background: var(--primary); color: white; border: none; border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(128,0,0,0.2); transition: 0.2s; flex-shrink: 0; font-size: 16px; }
         .btn-refresh:active { transform: scale(0.95); }
 
-        #contractListHeading, #searchResultTitle { color: #ffffff !important; text-shadow: 0 2px 4px rgba(43,0,0,0.4); margin-top: 20px; }
-        .user-profile-badge { background: #faf0f0 !important; border: 1px solid #e6b3b3 !important; color: var(--primary) !important; font-size: 11px; padding: 4px 10px; border-radius: 15px; margin-left: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+        #contractListHeading, #searchResultTitle { color: var(--dark) !important; margin-top: 20px; font-weight: bold; }
+        
+        .user-profile-badge { background: #ffffff !important; border: 1px solid #ffcccc !important; color: var(--primary) !important; font-size: 11px; padding: 4px 10px; border-radius: 15px; margin-left: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 
         /* Dashboard & Stat Cards */
         .perf-container { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         #adminDashboard { background: transparent !important; border: none !important; padding-bottom: 0; margin-bottom: -10px; }
-        .stat-card { background: white; border-radius: var(--card-radius); padding: 20px; box-shadow: 0 6px 15px rgba(43,0,0,0.15); position: relative; overflow: hidden; border-left: 5px solid transparent; }
+        .stat-card { background: white; border-radius: var(--card-radius); padding: 20px; box-shadow: 0 6px 15px rgba(43,0,0,0.08); position: relative; overflow: hidden; border-left: 5px solid transparent; }
         .stat-header { display: flex; align-items: center; margin-bottom: 5px; font-weight: 600; color: var(--gray); gap: 10px; font-size: 13px; }
         .stat-body { text-align: center; padding: 5px 0; }
         .big-number { font-size: 36px; font-weight: 800; margin: 0; line-height: 1; letter-spacing: -1px; color: var(--dark); }
@@ -102,29 +105,38 @@
         /* Minimal Polygon Cards */
         .list-container { padding: 0 20px 80px 20px; max-width: 800px; margin: 0 auto; }
         .polygon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; margin-top: 15px; }
+        
+        /* 🟢 ปรับโพลิกอนให้แยกสีชัดเจนและมีสีพื้นหลังเฉพาะตัว */
         .polygon-card { 
-            background: rgba(255,255,255,0.95); border-radius: 16px; padding: 15px; cursor: pointer; transition: all 0.3s ease; 
-            text-align: center; box-shadow: 0 4px 15px rgba(43,0,0,0.1); display: flex; flex-direction: column; 
+            border-radius: 16px; padding: 15px; cursor: pointer; transition: all 0.3s ease; 
+            text-align: center; box-shadow: 0 4px 15px rgba(43,0,0,0.08); display: flex; flex-direction: column; 
             justify-content: center; align-items: center; min-height: 90px; border-bottom: 4px solid transparent;
         }
-        .polygon-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(43,0,0,0.2); }
+        .polygon-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(43,0,0,0.15); }
         .polygon-card:active { transform: scale(0.97); }
         
-        .poly-bg-pending { border-bottom-color: var(--warning); }
-        .poly-bg-pending .poly-count, .poly-bg-pending .poly-icon { color: var(--warning); }
-        .poly-bg-normal { border-bottom-color: var(--primary); }
-        .poly-bg-normal .poly-count, .poly-bg-normal .poly-icon { color: var(--primary); }
-        .poly-bg-postpone { border-bottom-color: #9b59b6; }
+        /* รอตรวจสอบ = ส้มเหลือง */
+        .poly-bg-pending { border-bottom-color: #f39c12; background: #fffdf0; } 
+        .poly-bg-pending .poly-count, .poly-bg-pending .poly-icon { color: #f39c12; }
+        
+        /* ปกติ = ฟ้า/น้ำเงิน */
+        .poly-bg-normal { border-bottom-color: #0097e6; background: #f0f8ff; } 
+        .poly-bg-normal .poly-count, .poly-bg-normal .poly-icon { color: #0097e6; }
+        
+        /* เลื่อนนัด = ม่วง */
+        .poly-bg-postpone { border-bottom-color: #9b59b6; background: #fdf5ff; } 
         .poly-bg-postpone .poly-count, .poly-bg-postpone .poly-icon { color: #9b59b6; }
-        .poly-bg-overdue { border-bottom-color: var(--danger); }
-        .poly-bg-overdue .poly-count, .poly-bg-overdue .poly-icon { color: var(--danger); }
+        
+        /* เกินกำหนด = แดงสว่าง */
+        .poly-bg-overdue { border-bottom-color: #ff4757; background: #fff0f2; } 
+        .poly-bg-overdue .poly-count, .poly-bg-overdue .poly-icon { color: #ff4757; }
         
         .poly-count { font-size: 28px; font-weight: 700; line-height: 1; margin: 8px 0 4px 0; color: var(--dark); }
         .poly-title { font-size: 13px; font-weight: 500; color: var(--gray); }
         .poly-icon { font-size: 22px; }
 
         /* Customer Cards */
-        .cust-card { border-radius: var(--card-radius); margin-bottom: 15px; box-shadow: 0 6px 15px rgba(43,0,0,0.15); position: relative; background: white; border-left: 4px solid var(--gray); transition: 0.2s; animation: slideDown 0.3s ease-out; }
+        .cust-card { border-radius: var(--card-radius); margin-bottom: 15px; box-shadow: 0 6px 15px rgba(43,0,0,0.08); position: relative; background: white; border-left: 4px solid var(--gray); transition: 0.2s; animation: slideDown 0.3s ease-out; }
         .card-postpone { background: #fdf5ff; border-left-color: #9b59b6; } 
         .card-overdue { background: #fff0f0; border-left-color: var(--danger); } 
         .card-pending-approve { background: #f4f6f8; border-left-color: var(--warning); } 
@@ -161,7 +173,7 @@
         
         .login-overlay { position: fixed; top: 0; left: 100%; width: 100%; height: 100%; background: rgba(43, 0, 0, 0.95); z-index: 9000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px 40px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(43,0,0,0.4); }
-        .loading-state { text-align: center; padding: 40px; color: #fff; font-size: 15px; }
+        .loading-state { text-align: center; padding: 40px; color: var(--gray); font-size: 15px; }
         @keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
         .swal2-file-input { font-size: 14px; margin-top: 10px; }
         
@@ -172,7 +184,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#660000">	
+<meta name="theme-color" content="#f4f6f8">	
 </head>
 <body>
 
@@ -431,7 +443,7 @@
                 const data = await response.json();
                 if (data.contracts) { currentTrackingData = data.contracts; renderDashboard(data, date); } 
                 else { document.getElementById('contractList').innerHTML = '<div class="loading-state">ไม่พบข้อมูล หรือเกิดข้อผิดพลาด</div>'; }
-            } catch (error) { document.getElementById('contractList').innerHTML = '<div class="loading-state" style="color:#e6b3b3">เชื่อมต่อล้มเหลว กรุณาลองใหม่</div>'; }
+            } catch (error) { document.getElementById('contractList').innerHTML = '<div class="loading-state" style="color:var(--danger)">เชื่อมต่อล้มเหลว กรุณาลองใหม่</div>'; }
         }
 
         async function recordExpense() { /* คงฟังก์ชันเดิม */ }
@@ -455,7 +467,7 @@
                 const data = await response.json();
                 if(data.contracts) { filteredData = data.contracts.map(c => { let amt = parseFloat(c.amount || 0) * (c.overdue_count > 1 ? c.overdue_count : 1); return { ...c, finalAmount: amt, hasPostpone: (c.postpone_date && c.postpone_date !== "-") }; }); } else { filteredData = []; }
                 renderDirectList(data.contracts);
-            } catch (e) { container.innerHTML = '<div class="loading-state" style="color:#e6b3b3">ไม่พบข้อมูล หรือ เกิดข้อผิดพลาด</div>'; }
+            } catch (e) { container.innerHTML = '<div class="loading-state" style="color:var(--danger)">ไม่พบข้อมูล หรือ เกิดข้อผิดพลาด</div>'; }
         }
 
         function clearSearch() { document.getElementById('searchInput').value = ''; clearSearchUI(); loadData(); }
@@ -651,11 +663,113 @@
             return `<div class="cust-card ${cardClass}"><div class="cust-header"><div class="cust-info"><h3>${c.b_name}</h3><span class="cust-id">#${c.c_no}</span></div><div class="status-badge">${statusHtml}</div>${menuButton}</div><div class="cust-body"><div><div class="contact-line"><i class="fas fa-phone"></i> ${c.b_mobile}</div><div class="contact-line">งวดที่ ${c.installment_no}</div></div><div style="text-align:right"><span style="font-size:10px; color:var(--gray);">ยอดชำระ</span><div class="amount-val">฿${c.finalAmount.toLocaleString()}</div></div></div> ${financialHtml} <div class="cust-actions ${gridClass}">${actionButtonsHtml}</div></div>`;
         }
 
-        async function userReqPay(cNo) { /* คงฟังก์ชันเดิม */ }
-        async function userReqClose(cNo) { /* คงฟังก์ชันเดิม */ }
+        // 🟢 อัปเกรดระบบส่งข้อมูล
+        async function sendUserRequest(act, cNo, pl) { 
+            Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            try { 
+                let response = await fetch(API_URL, { 
+                    method:'POST', 
+                    body:JSON.stringify({ 
+                        action:'user_action_log', 
+                        sub_action:act, 
+                        c_no:cNo, 
+                        user:currentUser.username, 
+                        ...pl 
+                    }) 
+                }); 
+                let res = await response.json();
+                if(res.status === 'success') {
+                    Swal.fire({icon:'success', title:'บันทึกข้อมูลเรียบร้อย', timer:1500, showConfirmButton:false}); 
+                    loadData(); 
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', res.message || 'ระบบไม่สามารถบันทึกข้อมูลได้', 'error');
+                }
+            } catch(e) { 
+                Swal.fire('เชื่อมต่อล้มเหลว', 'ไม่สามารถส่งข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ต', 'error'); 
+            } 
+        }
+
+        // 🟢 เพิ่มช่องอัปโหลดสลิป (เลือกได้ ไม่บังคับ)
+        async function userReqPay(cNo) { 
+            const { value: formValues } = await Swal.fire({
+                title: 'แจ้งชำระเงิน',
+                html: `
+                    <label style="font-size:14px; color:var(--dark); text-align:left; display:block; margin-bottom:5px; margin-top:10px;">แนบสลิปโอนเงิน (เลือกได้)</label>
+                    <input type="file" id="slip-file" class="swal2-file" accept="image/*" style="display: block; width: 100%; margin-bottom: 15px;">
+                    <input type="text" id="slip-note" class="swal2-input" placeholder="หมายเหตุ (ถ้ามี) เช่น เวลาโอน, ยอดเงิน" style="margin:0; width:100%; box-sizing:border-box;">
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-paper-plane"></i> ยืนยันแจ้งชำระ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0097e6',
+                preConfirm: () => {
+                    const file = document.getElementById('slip-file').files[0];
+                    const note = document.getElementById('slip-note').value;
+                    return { file: file, note: note };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                try {
+                    let payload = { note: formValues.note || 'แจ้งชำระเงิน' };
+                    if (formValues.file) {
+                        const base64 = await toBase64(formValues.file);
+                        payload.slip_image = base64;
+                        payload.slip_name = formValues.file.name;
+                        payload.slip_mime = formValues.file.type;
+                    }
+                    sendUserRequest('request_pay', cNo, payload);
+                } catch (e) {
+                    Swal.fire('Error', 'ไม่สามารถอ่านไฟล์รูปภาพได้', 'error');
+                }
+            }
+        }
+
+        // 🟢 เพิ่มช่องอัปโหลดสลิป (บังคับแนบสลิป)
+        async function userReqClose(cNo) { 
+            const { value: formValues } = await Swal.fire({
+                title: 'ขอปิดยอด',
+                html: `
+                    <label style="font-size:14px; color:var(--dark); text-align:left; display:block; margin-bottom:5px; margin-top:10px;">แนบสลิปปิดยอดบัญชี <span style="color:red;">*</span></label>
+                    <input type="file" id="close-slip-file" class="swal2-file" accept="image/*" style="display: block; width: 100%; margin-bottom: 15px;">
+                    <input type="text" id="close-slip-note" class="swal2-input" placeholder="หมายเหตุ (ถ้ามี)" style="margin:0; width:100%; box-sizing:border-box;">
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-flag-checkered"></i> ยืนยันขอปิดยอด',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#b30000',
+                preConfirm: () => {
+                    const file = document.getElementById('close-slip-file').files[0];
+                    const note = document.getElementById('close-slip-note').value;
+                    if (!file) {
+                        Swal.showValidationMessage('กรุณาแนบรูปสลิปปิดยอดบัญชีก่อนทำรายการ');
+                        return false;
+                    }
+                    return { file: file, note: note };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังแปลงไฟล์รูปภาพ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                try {
+                    const base64 = await toBase64(formValues.file);
+                    sendUserRequest('request_close', cNo, {
+                        note: formValues.note || 'ส่งคำขอปิดยอดบัญชี',
+                        slip_image: base64,
+                        slip_name: formValues.file.name,
+                        slip_mime: formValues.file.type
+                    });
+                } catch (e) {
+                    Swal.fire('Error', 'ไม่สามารถอ่านไฟล์รูปภาพได้', 'error');
+                }
+            }
+        }
+
         async function userReqPostpone(cNo) { Swal.fire({title:'ขอเลื่อนนัด', input:'date'}).then(r=>{if(r.value) sendUserRequest('request_postpone', cNo, {new_date:r.value});}); }
         async function userAddNote(cNo) { Swal.fire({input:'text', title:'บันทึก'}).then(r=>{if(r.value) sendUserRequest('add_daily_note', cNo, {note:r.value});}); }
-        async function sendUserRequest(act, cNo, pl) { Swal.showLoading(); try { await fetch(API_URL, { method:'POST', body:JSON.stringify({ action:'user_action_log', sub_action:act, c_no:cNo, user:currentUser.username, ...pl }) }); Swal.fire({icon:'success', title:'บันทึกสำเร็จ', timer:1500, showConfirmButton:false}); loadData(); } catch(e) { Swal.fire('Error', 'ส่งข้อมูลล้มเหลว', 'error'); } }
 
         // 🟢 เพิ่มฟังก์ชัน adminApprove แบบทำงานเต็มรูปแบบ
         async function adminApprove(cNo, rowIndex, reqDate, details, type) { 
@@ -695,8 +809,81 @@
 
         function openPostpone(idx, name, currentVal) { Swal.fire({ title: 'จัดการนัดหมาย', html: `<div style="margin-bottom:10px; color:var(--dark);">เดิม: <b>${currentVal || '-'}</b></div><input type="date" id="swal-date" class="swal2-input">`, showDenyButton: true, showCancelButton: true, confirmButtonText: 'บันทึก', denyButtonText: 'ลบนัดหมาย', cancelButtonText: 'ปิด', confirmButtonColor: '#800000' }).then(r => { if (r.isConfirmed) executeAction({ action: 'postpone', row_index: idx, new_date: document.getElementById('swal-date').value }); else if (r.isDenied) executeAction({ action: 'postpone', row_index: idx, new_date: '' }); }); }
         
-        async function openContractPopup(cNo) { /* คงฟังก์ชันเดิม */ }
-        async function openContactImage(cNo) { /* คงฟังก์ชันเดิม */ }
+        // 🟢 ฟังก์ชันช่วยแปลงลิงก์ Google Drive ให้อยู่ในโหมด Preview (สำหรับฝัง iframe)
+        function getDrivePreviewUrl(url) {
+            if (!url) return '';
+            let fileId = '';
+            if (url.includes('id=')) {
+                fileId = url.split('id=')[1].split('&')[0];
+            } else if (url.includes('/d/')) {
+                fileId = url.split('/d/')[1].split('/')[0];
+            }
+            if (fileId) {
+                return `https://drive.google.com/file/d/${fileId}/preview`;
+            }
+            return url;
+        }
+
+        // 🟢 เปิดดูสัญญาแบบฝัง iframe (ตามดีไซน์ในรูปภาพ)
+        async function openContractPopup(cNo) { 
+            Swal.fire({ title: 'กำลังโหลดข้อมูล...', didOpen: () => { Swal.showLoading(); }});
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_contract_image', c_no: cNo }) });
+                const d = await res.json();
+                if (d.status === 'success' && d.url) {
+                    const previewUrl = getDrivePreviewUrl(d.url);
+                    Swal.fire({ 
+                        html: `
+                            <div style="width: 100%; height: 65vh; background: #222; border-radius: 8px; overflow: hidden; margin-top: 10px;">
+                                <iframe src="${previewUrl}" width="100%" height="100%" style="border: none;" allowfullscreen></iframe>
+                            </div>
+                        `,
+                        width: '800px',
+                        padding: '10px',
+                        showCloseButton: true,
+                        showConfirmButton: true,
+                        confirmButtonText: 'ปิด',
+                        confirmButtonColor: '#3b82f6',
+                        footer: `<a href="${d.url}" target="_blank" style="font-size: 16px; font-weight: bold; color: #1565c0; text-decoration: underline;">หากรูปไม่ขึ้น คลิกที่นี่เพื่อเปิดแอป Drive</a>`
+                    });
+                } else {
+                    Swal.fire('ไม่พบรูปสัญญา', 'ระบบไม่พบไฟล์ใน Google Drive หรืออาจยังไม่ได้อัปโหลด', 'warning');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'เชื่อมต่อระบบเพื่อดึงรูปภาพล้มเหลว', 'error');
+            }
+        }
+
+        // 🟢 เปิดดูข้อมูลลูกค้าแบบฝัง iframe
+        async function openContactImage(cNo) { 
+            Swal.fire({ title: 'กำลังโหลดข้อมูล...', didOpen: () => { Swal.showLoading(); }});
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'get_contract_image', c_no: cNo, type: 'contact_aw' }) });
+                const d = await res.json();
+                if (d.status === 'success' && d.url) {
+                    const previewUrl = getDrivePreviewUrl(d.url);
+                    Swal.fire({ 
+                        html: `
+                            <div style="width: 100%; height: 65vh; background: #222; border-radius: 8px; overflow: hidden; margin-top: 10px;">
+                                <iframe src="${previewUrl}" width="100%" height="100%" style="border: none;" allowfullscreen></iframe>
+                            </div>
+                        `,
+                        width: '800px',
+                        padding: '10px',
+                        showCloseButton: true,
+                        showConfirmButton: true,
+                        confirmButtonText: 'ปิด',
+                        confirmButtonColor: '#3b82f6',
+                        footer: `<a href="${d.url}" target="_blank" style="font-size: 16px; font-weight: bold; color: #1565c0; text-decoration: underline;">หากรูปไม่ขึ้น คลิกที่นี่เพื่อเปิดแอป Drive</a>`
+                    });
+                } else {
+                    Swal.fire('ไม่พบรูปข้อมูลติดต่อ', 'ไม่มีไฟล์เอกสารแนบในสัญญานี้', 'info');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'เชื่อมต่อระบบดึงรูปภาพล้มเหลว', 'error');
+            }
+        }
+
         function formatDateToThai(dateString) { if(!dateString) return ""; const p = dateString.split('-'); let year = parseInt(p[0]) + 543; return `${p[2]}/${p[1]}/${year}`; }
         
         function updateCharts(dailyTarget, dailyCollected, monthlyTarget, monthlyCollected) { 
@@ -720,7 +907,36 @@
 
         function printReport() { /* คงฟังก์ชันเดิม */ }
 		function showShopTransferReport() { /* คงฟังก์ชันเดิม */ }
-        async function userReqFollow(cNo) { /* คงฟังก์ชันเดิม */ }
+        
+        async function userReqFollow(cNo) { 
+            const { value: followType } = await Swal.fire({
+                title: 'สถานะการติดตาม',
+                input: 'select',
+                inputOptions: {
+                    'add_daily_note': 'บันทึกการติดตามทั่วไป',
+                    'req_letter': 'ขอส่งจดหมายทวงถาม',
+                    'req_visit': 'ขอลงพื้นที่ติดตาม',
+                    'req_bad_debt': 'แจ้งหนี้เสีย / Blacklist'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'ถัดไป',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (followType) {
+                const { value: note } = await Swal.fire({
+                    title: 'รายละเอียดเพิ่มเติม',
+                    input: 'text',
+                    inputPlaceholder: 'ใส่หมายเหตุการติดตาม...',
+                    showCancelButton: true,
+                    confirmButtonText: 'บันทึก',
+                    cancelButtonText: 'ยกเลิก'
+                });
+                if (note !== undefined) {
+                    sendUserRequest(followType, cNo, {note: note});
+                }
+            }
+        }
     </script>
 </body>
 </html>

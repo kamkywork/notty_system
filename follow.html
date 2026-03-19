@@ -490,26 +490,34 @@
             if(!currentTrackingData || currentTrackingData.length === 0) { alert('กำลังโหลดข้อมูล กรุณารอสักครู่...'); return; }
             const closedList = currentTrackingData.filter(c => c.status === 'Paid' || c.status === 'Close' || c.status === 'Cancel');
             filteredData = closedList.map(c => { let amt = parseFloat(c.amount || 0); return { ...c, finalAmount: amt, hasPostpone: false }; });
+            
+            // 🟢 จัดเรียงเลขสัญญาจากน้อยไปมาก
+            filteredData.sort((a, b) => String(a.c_no).localeCompare(String(b.c_no), undefined, {numeric: true}));
+            
             isSearchMode = true;
             document.getElementById('statContainer').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'none';
             document.getElementById('polygonContainer').style.display = 'none';
             document.getElementById('searchResultTitle').style.display = 'block';
             document.getElementById('txtSearchKeyword').innerText = `รายการปิดสัญญา/ครบงวด/ยกเลิก (${closedList.length} รายการ)`;
-            renderDirectList(closedList);
+            renderDirectList(filteredData);
         }
         
         function showBadDebtContracts() {
             if(!currentTrackingData || currentTrackingData.length === 0) { alert('กำลังโหลดข้อมูล...'); return; }
             const badDebtList = currentTrackingData.filter(c => c.status === 'BadDebt');
             filteredData = badDebtList.map(c => { let amt = parseFloat(c.amount || 0); return { ...c, finalAmount: amt, hasPostpone: false }; });
+            
+            // 🟢 จัดเรียงเลขสัญญาจากน้อยไปมาก
+            filteredData.sort((a, b) => String(a.c_no).localeCompare(String(b.c_no), undefined, {numeric: true}));
+            
             isSearchMode = true;
             document.getElementById('statContainer').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'none';
             document.getElementById('polygonContainer').style.display = 'none';
             document.getElementById('searchResultTitle').style.display = 'block';
             document.getElementById('txtSearchKeyword').innerText = `รายการหนี้เสีย / Blacklist (${badDebtList.length} รายการ)`;
-            renderDirectList(badDebtList);
+            renderDirectList(filteredData);
         }
 
         function showAllContracts() {
@@ -621,7 +629,6 @@
                         } else { isOverdue = false; }
                     }
 
-                    // แยกตามสถานะใหม่ที่เพิ่มเข้าไป
                     if (c.status === 'BadDebt') {
                         c.worksheetStatus = 'หนี้เสีย';
                         contractGroups.bad_debt.push(item);
@@ -645,6 +652,25 @@
             updateCharts(0, strictDailyCollected, 0, strictMonthlyCollected);
             if (data.summary && data.summary.commission !== undefined) { const commEl = document.getElementById('txtCommission'); if(commEl) commEl.innerText = (data.summary.commission || 0).toLocaleString(); }
             
+            // 🟢 เพิ่มการจัดเรียงข้อมูลที่นี่
+            const sortByCNo = (a, b) => String(a.c_no).localeCompare(String(b.c_no), undefined, {numeric: true});
+            
+            // เมนูอื่นๆ เรียงจากเลขสัญญาน้อยไปมาก
+            contractGroups.pending.sort(sortByCNo);
+            contractGroups.normal.sort(sortByCNo);
+            contractGroups.postpone.sort(sortByCNo);
+            contractGroups.visit.sort(sortByCNo);
+            contractGroups.letter.sort(sortByCNo);
+            contractGroups.bad_debt.sort(sortByCNo);
+
+            // 🟢 เมนูค้างชำระ (Overdue) เรียงจากยอดค้างมากไปน้อย (ถ้าค้างเท่ากัน ให้เรียงเลขสัญญาน้อยไปมาก)
+            contractGroups.overdue.sort((a, b) => {
+                if (b.overdue_count !== a.overdue_count) {
+                    return b.overdue_count - a.overdue_count; // มากไปน้อย
+                }
+                return String(a.c_no).localeCompare(String(b.c_no), undefined, {numeric: true});
+            });
+
             if (contractGroups.pending.length > 0 && currentUser.role === 'admin') { polyContainer.innerHTML += createPolygonHtml('pending', 'รอตรวจสอบ', contractGroups.pending.length, 'poly-bg-pending', 'fas fa-clock'); }
             polyContainer.innerHTML += createPolygonHtml('normal', 'ปกติ (วันนี้)', contractGroups.normal.length, 'poly-bg-normal', 'fas fa-calendar-check');
             polyContainer.innerHTML += createPolygonHtml('postpone', 'เลื่อนนัด', contractGroups.postpone.length, 'poly-bg-postpone', 'fas fa-history');
@@ -1067,7 +1093,44 @@
         function exportToExcel() { if (!filteredData.length) return Swal.fire('ไม่มีข้อมูล', 'กรุณาค้นหาหรือเลือกวันที่ก่อน', 'warning'); let csv = "data:text/csv;charset=utf-8,\uFEFFลำดับ,เลขสัญญา,ชื่อ,เบอร์,งวด,ยอด,สถานะ\n"; filteredData.forEach((i, idx) => csv += `${idx+1},"${i.c_no}","${i.b_name}","${i.b_mobile}",${i.installment_no},${i.finalAmount},"${i.status}"\n`); const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "Report.csv"; link.click(); }
         function openPay(c_no) { window.open(`https://kamkywork.github.io/kamkybill-app/?ref=${encodeURIComponent(c_no)}`, '_blank'); }
         
-        async function openManageMenu(idx, name, c_no) { /* คงฟังก์ชันเดิม */ }
+        async function openManageMenu(idx, name, c_no) { 
+            const { value: action } = await Swal.fire({
+                title: 'จัดการสัญญา',
+                html: `เลือกการดำเนินการสำหรับ <b>${name}</b><br><small>(เลขสัญญา: ${c_no})</small>`,
+                input: 'select',
+                inputOptions: {
+                    'close_account': '✅ ปิดบัญชี (ชำระครบ)',
+                    'cancel_contract': '❌ ยกเลิกสัญญา (Cancel)'
+                },
+                inputPlaceholder: 'เลือกรายการ...',
+                showCancelButton: true,
+                confirmButtonText: 'ตกลง',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#800000'
+            });
+
+            if (action) {
+                let confirmText = action === 'close_account' ? 'ยืนยันปิดบัญชี?' : 'ยืนยันยกเลิกสัญญา?';
+                const { value: reason } = await Swal.fire({
+                    title: confirmText,
+                    input: 'text',
+                    inputPlaceholder: 'ใส่หมายเหตุ (ถ้ามี)...',
+                    showCancelButton: true,
+                    confirmButtonText: 'บันทึก',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: action === 'close_account' ? '#0097e6' : '#b30000'
+                });
+
+                if (reason !== undefined) {
+                    executeAction({ 
+                        action: action, 
+                        row_index: idx, 
+                        c_no: c_no, 
+                        reason: reason || (action === 'close_account' ? 'ปิดบัญชี' : 'ยกเลิกสัญญา') 
+                    });
+                }
+            }
+        }
         async function executeAction(p) { Swal.fire({ title: 'บันทึก...', didOpen: () => Swal.showLoading() }); try { await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); Swal.fire({ icon: 'success', title: 'สำเร็จ', timer: 1000, showConfirmButton: false }); loadData(); } catch (e) { Swal.fire('Error', 'ผิดพลาด', 'error'); } }
         function userProfile() { Swal.fire({ title: 'ข้อมูลผู้ใช้', html: `<b>${currentUser.name}</b><br>สถานะ: ${currentUser.role}`, showDenyButton: true, confirmButtonText: 'เปลี่ยนรหัสผ่าน', denyButtonText: 'ปิด' }).then(r => { if(r.isConfirmed) changePass(); }); }
         async function changePass() { const { value: p } = await Swal.fire({ title: 'ตั้งรหัสใหม่', input: 'password' }); if(p) { await fetch(API_URL, { method:'POST', body:JSON.stringify({action:'change_password', username:currentUser.username, new_pass:p}) }); Swal.fire('สำเร็จ'); } }

@@ -103,6 +103,9 @@
         /* Minimal Polygon Cards */
         .list-container { padding: 0 20px 80px 20px; max-width: 800px; margin: 0 auto; }
         .polygon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; margin-top: 15px; }
+        @media (max-width: 480px) {
+            .polygon-grid { grid-template-columns: repeat(2, 1fr); }
+        }
         
         .polygon-card { 
             border-radius: 16px; padding: 15px; cursor: pointer; transition: all 0.3s ease; 
@@ -127,6 +130,18 @@
         /* เกินกำหนด = แดงสว่าง */
         .poly-bg-overdue { border-bottom-color: #ff4757; background: #fff0f2; } 
         .poly-bg-overdue .poly-count, .poly-bg-overdue .poly-icon { color: #ff4757; }
+
+        /* ลงพื้นที่ = สีเขียวอมฟ้า (Teal) */
+        .poly-bg-visit { border-bottom-color: #16a085; background: #e8f8f5; } 
+        .poly-bg-visit .poly-count, .poly-bg-visit .poly-icon { color: #16a085; }
+
+        /* ส่งจดหมาย = ฟ้าอมเทา */
+        .poly-bg-letter { border-bottom-color: #34495e; background: #f4f6f7; } 
+        .poly-bg-letter .poly-count, .poly-bg-letter .poly-icon { color: #34495e; }
+        
+        /* หนี้เสีย = ดำ/แดงเข้ม */
+        .poly-bg-baddebt { border-bottom-color: #2c3e50; background: #eaeded; } 
+        .poly-bg-baddebt .poly-count, .poly-bg-baddebt .poly-icon { color: #2c3e50; }
         
         .poly-count { font-size: 28px; font-weight: 700; line-height: 1; margin: 8px 0 4px 0; color: var(--dark); }
         .poly-title { font-size: 13px; font-weight: 500; color: var(--gray); }
@@ -138,6 +153,9 @@
         .card-overdue { background: #fff0f0; border-left-color: var(--danger); } 
         .card-pending-approve { background: #f4f6f8; border-left-color: var(--warning); } 
         .card-search-result { border-left-color: var(--primary); background: #faf0f0; }
+        .card-field-visit { border-left-color: #16a085; background: #e8f8f5; }
+        .card-letter-sent { border-left-color: #34495e; background: #f4f6f7; }
+        .card-bad-debt { border-left-color: #2c3e50; background: #eaeded; opacity: 0.85; }
         
         .cust-header { padding: 15px 15px 5px 15px; display: flex; justify-content: space-between; align-items: flex-start; }
         .cust-info h3 { margin: 0 0 4px 0; font-size: 17px; color: var(--dark); }
@@ -194,6 +212,7 @@
         
         <button class="sidebar-btn" onclick="showAllContracts(); toggleSidebar();"><i class="fas fa-list"></i> ดูสัญญาทั้งหมด</button>
         <button class="sidebar-btn" onclick="showClosedContracts(); toggleSidebar();"><i class="fas fa-check-double"></i> ปิด/ครบ/ยกเลิก</button>
+        <button class="sidebar-btn" onclick="showBadDebtContracts(); toggleSidebar();"><i class="fas fa-skull-crossbones"></i> รายการหนี้เสีย</button>
         <button id="btnExpense" class="sidebar-btn" style="display:none;" onclick="recordExpense(); toggleSidebar();"><i class="fas fa-file-invoice-dollar"></i> บันทึกรายจ่าย</button>
         <button id="btnShopReport" class="sidebar-btn" style="display:none;" onclick="showShopTransferReport(); toggleSidebar();"><i class="fas fa-money-bill-wave"></i> ยอดโอนร้าน</button>
         <button id="btnPrint" class="sidebar-btn" onclick="printReport(); toggleSidebar();"><i class="fas fa-print"></i> พิมพ์รายงาน</button>
@@ -268,10 +287,12 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzHiEjgXwRGu1FJXNaPsvfnAzu2Gj6GX01AIbqFv9-JwDhWcCkpHBGdBQI6-ze-225D/exec'; 
+        const API_URL = 'https://script.google.com/macros/s/AKfycbz7zGBKq4eEGPi5TAo3DhqrPZa4zpYmaaGsVP-rw_5Un6t3G-lwAe6zwLvrNmttLkBR/exec'; 
         let currentUser = null;
         let currentTrackingData = [], filteredData = [], globalSummary = {};
-        let contractGroups = { pending: [], normal: [], postpone: [], overdue: [] };
+        
+        // แยกสถานะ ลงพื้นที่ (visit) และส่งจดหมาย (letter)
+        let contractGroups = { pending: [], normal: [], postpone: [], overdue: [], visit: [], letter: [], bad_debt: [] };
         let isSearchMode = false;
 
         function toggleSidebar() {
@@ -443,11 +464,6 @@
             } catch (error) { document.getElementById('contractList').innerHTML = '<div class="loading-state" style="color:var(--danger)">เชื่อมต่อล้มเหลว กรุณาลองใหม่</div>'; }
         }
 
-        async function recordExpense() { /* คงฟังก์ชันเดิม */ }
-        async function manageUsers() { /* คงฟังก์ชันเดิม */ }
-        async function addUser() { /* คงฟังก์ชันเดิม */ }
-        async function deleteUser(username) { /* คงฟังก์ชันเดิม */ }
-
         async function doGlobalSearch() {
             const keyword = document.getElementById('searchInput').value.trim();
             if(!keyword) return;
@@ -482,6 +498,19 @@
             document.getElementById('txtSearchKeyword').innerText = `รายการปิดสัญญา/ครบงวด/ยกเลิก (${closedList.length} รายการ)`;
             renderDirectList(closedList);
         }
+        
+        function showBadDebtContracts() {
+            if(!currentTrackingData || currentTrackingData.length === 0) { alert('กำลังโหลดข้อมูล...'); return; }
+            const badDebtList = currentTrackingData.filter(c => c.status === 'BadDebt');
+            filteredData = badDebtList.map(c => { let amt = parseFloat(c.amount || 0); return { ...c, finalAmount: amt, hasPostpone: false }; });
+            isSearchMode = true;
+            document.getElementById('statContainer').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('polygonContainer').style.display = 'none';
+            document.getElementById('searchResultTitle').style.display = 'block';
+            document.getElementById('txtSearchKeyword').innerText = `รายการหนี้เสีย / Blacklist (${badDebtList.length} รายการ)`;
+            renderDirectList(badDebtList);
+        }
 
         function showAllContracts() {
             if(!currentTrackingData || currentTrackingData.length === 0) { alert('กำลังโหลดข้อมูล...'); return; }
@@ -492,22 +521,33 @@
             document.getElementById('searchResultTitle').style.display = 'block';
             document.getElementById('contractListHeading').style.display = 'none';
             document.getElementById('txtSearchKeyword').innerText = `สัญญาทั้งหมด (${currentTrackingData.length} รายการ) - เรียงตามสถานะ`;
+            
+            // เรียงลำดับความสำคัญของสถานะ
             let sortedData = [...currentTrackingData].sort((a, b) => {
                 const getPriority = (c) => {
                     const isClosed = (c.status === 'Paid' || c.status === 'Close' || c.status === 'Cancel');
-                    const isBadDebt = (c.overdue_count >= 3); 
-                    if (isBadDebt) return 4; if (isClosed) return 3; if (c.overdue_count > 0) return 2; return 1; 
+                    if (c.status === 'BadDebt') return 6; 
+                    if (isClosed) return 5; 
+                    if (c.status === 'Letter_Sent') return 4;
+                    if (c.status === 'Field_Visit') return 3;
+                    if (c.overdue_count > 0) return 2; 
+                    return 1; 
                 }; return getPriority(a) - getPriority(b);
             });
+            
             filteredData = sortedData.map(c => {
                 let amt = parseFloat(c.amount || 0) * (c.overdue_count > 1 ? c.overdue_count : 1);
                 let statusSuffix = "";
-                if (c.overdue_count >= 3) statusSuffix = " (หนี้เสีย)";
+                if (c.status === 'BadDebt') statusSuffix = " (หนี้เสีย)";
+                else if (c.status === 'Letter_Sent') statusSuffix = " (ส่งจดหมายทวงถาม)";
+                else if (c.status === 'Field_Visit') statusSuffix = " (ลงพื้นที่ติดตาม)";
                 else if (c.status === 'Paid' || c.status === 'Close') statusSuffix = " (ปิดยอด)";
                 else if (c.status === 'Cancel') statusSuffix = " (ยกเลิก)";
                 else if (c.overdue_count > 0) statusSuffix = ` (ค้าง ${c.overdue_count})`;
                 else statusSuffix = " (ปกติ)";
-                return { ...c, b_name: `${c.b_name} <span style="font-size:12px; font-weight:bold; color:${statusSuffix.includes('ปกติ')?'var(--success)':(statusSuffix.includes('ปิด')||statusSuffix.includes('ยกเลิก')?'var(--gray)':'var(--danger)')}">${statusSuffix}</span>`, finalAmount: amt, hasPostpone: (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "") };
+                
+                let isGrayOrRed = (statusSuffix.includes('ปิด')||statusSuffix.includes('ยกเลิก')||statusSuffix.includes('จดหมาย')||statusSuffix.includes('ลงพื้นที่'));
+                return { ...c, b_name: `${c.b_name} <span style="font-size:12px; font-weight:bold; color:${statusSuffix.includes('ปกติ')?'var(--success)':(isGrayOrRed?'var(--gray)':'var(--danger)')}">${statusSuffix}</span>`, finalAmount: amt, hasPostpone: (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "") };
             });
             renderDirectList(filteredData);
         }
@@ -526,7 +566,9 @@
             if(selectedDate) { let d = new Date(selectedDate); selectedYearTH = d.getFullYear() + 543; selectedMonthOnly = ("0" + (d.getMonth() + 1)).slice(-2); }
             const selectedMonthStr = `${selectedYearTH}-${selectedMonthOnly}`; 
             
-            contractGroups = { pending: [], normal: [], postpone: [], overdue: [] };
+            // แยก Groups
+            contractGroups = { pending: [], normal: [], postpone: [], overdue: [], visit: [], letter: [], bad_debt: [] };
+            
             let strictDailyCollected = 0; let strictMonthlyCollected = 0;
             const dashboard = document.getElementById('adminDashboard');
             const boxCost = document.getElementById('boxCost');     
@@ -556,7 +598,7 @@
                     if (isTargetToday && isPaid && c.status !== 'Cancel') strictDailyCollected += amount;
                     if (c.due_date) { const parts = c.due_date.split('/'); if(parts.length === 3) { const cMonthStr = `${parts[2]}-${parts[1]}`; if (cMonthStr === selectedMonthStr && isPaid && c.status !== 'Cancel') strictMonthlyCollected += amount; } }
                     if (hidden.includes(String(c.c_no))) return;
-                    if (isPaid) return; 
+                    if (isPaid && c.status !== 'BadDebt') return; 
                     
                     let amt = parseFloat(c.amount) * (c.overdue_count > 1 ? c.overdue_count : 1);
                     if (c.original_due_date !== selectedDateThai && c.postpone_date === selectedDateThai) { 
@@ -568,35 +610,34 @@
                     let item = { ...c, finalAmount: amt, hasPostpone: hasPostpone };
                     filteredData.push(item);
                     
-                    // 🟢 โลจิกใหม่: ป้องกันการแสดงในช่อง "เกินกำหนด" หากยังมีวันเลื่อนนัดที่ใช้งานได้อยู่
                     let isOverdue = (c.overdue_count > 0);
                     if (isOverdue && hasPostpone) {
                         let pParts = c.postpone_date.split('/');
                         if (pParts.length === 3) {
-                            // แปลงวันที่เลื่อนนัดเป็น Date Object
                             let pDate = new Date(parseInt(pParts[2]) - 543, parseInt(pParts[1]) - 1, parseInt(pParts[0]));
                             let tDate = selectedDate ? new Date(selectedDate) : new Date();
                             tDate.setHours(0,0,0,0);
-                            // หากวันที่เลื่อนนัดยังมาไม่ถึง (อนาคต) หรือเป็นวันนี้ จะไม่ถือว่าเกินกำหนด
-                            if (pDate >= tDate) {
-                                isOverdue = false;
-                            }
-                        } else {
-                            isOverdue = false;
-                        }
+                            if (pDate >= tDate) { isOverdue = false; }
+                        } else { isOverdue = false; }
                     }
 
-                    // จัดกลุ่มสัญญาเพื่อแสดงใน Dashboard
-                    if (isPendingStatus) { 
+                    // แยกตามสถานะใหม่ที่เพิ่มเข้าไป
+                    if (c.status === 'BadDebt') {
+                        c.worksheetStatus = 'หนี้เสีย';
+                        contractGroups.bad_debt.push(item);
+                    } else if (c.status === 'Letter_Sent') {
+                        c.worksheetStatus = 'ส่งจดหมาย';
+                        contractGroups.letter.push(item);
+                    } else if (c.status === 'Field_Visit') {
+                        c.worksheetStatus = 'ลงพื้นที่';
+                        contractGroups.visit.push(item);
+                    } else if (isPendingStatus) { 
                         if (currentUser.role === 'admin' || !isPendingStatus) contractGroups.pending.push(item); 
-                    } 
-                    else if (isPostponedToToday) { 
+                    } else if (isPostponedToToday) { 
                         contractGroups.postpone.push(item); 
-                    }
-                    else if (isOverdue) { 
+                    } else if (isOverdue) { 
                         contractGroups.overdue.push(item); 
-                    } 
-                    else if (isTargetToday) { 
+                    } else if (isTargetToday) { 
                         contractGroups.normal.push(item); 
                     }
                 });
@@ -608,6 +649,10 @@
             polyContainer.innerHTML += createPolygonHtml('normal', 'ปกติ (วันนี้)', contractGroups.normal.length, 'poly-bg-normal', 'fas fa-calendar-check');
             polyContainer.innerHTML += createPolygonHtml('postpone', 'เลื่อนนัด', contractGroups.postpone.length, 'poly-bg-postpone', 'fas fa-history');
             polyContainer.innerHTML += createPolygonHtml('overdue', 'เกินกำหนด', contractGroups.overdue.length, 'poly-bg-overdue', 'fas fa-exclamation-circle');
+            polyContainer.innerHTML += createPolygonHtml('visit', 'ลงพื้นที่ติดตาม', contractGroups.visit.length, 'poly-bg-visit', 'fas fa-motorcycle');
+            polyContainer.innerHTML += createPolygonHtml('letter', 'ส่งจดหมาย', contractGroups.letter.length, 'poly-bg-letter', 'fas fa-envelope-open-text');
+            polyContainer.innerHTML += createPolygonHtml('bad_debt', 'หนี้เสีย (Blacklist)', contractGroups.bad_debt.length, 'poly-bg-baddebt', 'fas fa-skull-crossbones');
+            
             container.innerHTML = `<div class="loading-state" style="padding:20px;">👈 คลิกที่กล่องสถานะด้านบนเพื่อดูรายการ</div>`;
         }
 
@@ -639,6 +684,7 @@
             let safeNote = (c.last_note || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
             let safeReqDate = c.request_date || '-';
 
+            // จัดการ Style สถานะ Card
             if (c.status === 'Pending_Approve' || c.status === 'รอตรวจสอบ') { 
                 cardClass = "card-pending-approve"; 
                 if(isAdmin) statusHtml = `<span class="status-text text-purple" style="cursor:pointer;" onclick="adminApprove('${c.c_no}', ${c.row_index}, '${safeReqDate}', '${safeNote}', 'postpone')">⏳ รอตรวจสอบ (กด)</span>`; 
@@ -649,12 +695,26 @@
                 if(isAdmin) statusHtml = `<span class="status-text text-red" style="cursor:pointer;" onclick="adminApprove('${c.c_no}', ${c.row_index}, '-', '${safeNote}', 'close')">🏁 รอปิดยอด (กดอนุมัติ)</span>`; 
                 else statusHtml = `<span class="status-text text-red">🏁 รออนุมัติปิดยอด</span>`; 
             }
+            else if (c.status === 'Field_Visit') {
+                cardClass = "card-field-visit";
+                statusHtml = `<span class="status-text" style="color:#16a085;"><i class="fas fa-motorcycle"></i> อยู่ระหว่างลงพื้นที่ติดตาม</span>`;
+            }
+            else if (c.status === 'Letter_Sent') {
+                cardClass = "card-letter-sent";
+                statusHtml = `<span class="status-text" style="color:#34495e;"><i class="fas fa-envelope-open-text"></i> อยู่ระหว่างส่งจดหมาย</span>`;
+            }
+            else if (c.status === 'BadDebt') {
+                cardClass = "card-bad-debt";
+                statusHtml = `<span class="status-text" style="color:var(--dark);"><i class="fas fa-skull-crossbones"></i> หนี้เสีย (Blacklist)</span>`;
+            }
             else if (c.hasPostpone) { cardClass = "card-postpone"; statusHtml = `<span class="status-text text-darkpurple">⏰ เลื่อน: ${c.postpone_date}</span>`; } 
             else if (c.overdue_count > 0) { cardClass = "card-overdue"; statusHtml = `<span class="status-text text-red">❗ ค้าง ${c.overdue_count} งวด</span>`; }
             else if (c.status === 'Cancel') { cardClass = "card-search-result"; statusHtml = `<span class="status-text" style="color:var(--gray);"><i class="fas fa-ban"></i> ยกเลิกสัญญาแล้ว</span>`; }
             else if (isClosed) { statusHtml = `<span class="status-text text-blue">✅ ปิดบัญชีแล้ว (${c.last_payment_date})</span>`; }
             
             if (hasPaymentNote) { let noteContent = linkify(c.last_note); statusHtml += `<div style="font-size:11px; color:var(--primary); background:#faf0f0; padding:6px; border-radius:4px; margin-top:4px; border:1px solid #e6b3b3; white-space:normal; word-break:break-all;">💰 ${noteContent}</div>`; }
+            
+            // Financial Details
             let financialHtml = '';
             let profitClass = c.current_profit >= 0 ? 'color:var(--success);' : 'color:var(--danger);'; 
             let profitIcon = c.current_profit >= 0 ? '📈 กำไร' : '📉 ยังไม่คืนทุน';
@@ -675,12 +735,38 @@
                         <span>ROI: ${c.roi_percent || 0}%</span>
                     </div>
                 </div>`;
+                
             let menuButton = isAdmin ? `<button class="btn-kebab" style="margin-left:5px;" onclick="openManageMenu(${c.row_index},'${c.b_name}','${c.c_no}')">⋮</button>` : '';
             let actionButtonsHtml = '', gridClass = '';
             const hasExtraInfo = (c.contact_image && c.contact_image !== "" && c.contact_image !== "-");
             const infoBtn = hasExtraInfo ? `<button class="btn-act btn-act-info" onclick="openContactImage('${c.c_no}')"><i class="fas fa-address-card"></i> ข้อมูล</button>` : `<button class="btn-act btn-disabled" disabled><i class="fas fa-address-card"></i> ข้อมูล</button>`;
             const contractBtn = `<button class="btn-act btn-act-contract" onclick="openContractPopup('${c.c_no}')"><i class="fas fa-file-contract"></i> สัญญา</button>`;
-            if (isClosed || c.status === 'Cancel') {
+            
+            // การแสดงปุ่มในสถานะต่างๆ
+            if (c.status === 'Field_Visit') {
+                if (isAdmin) {
+                    gridClass = 'grid-closed-actions';
+                    actionButtonsHtml = `
+                        <button class="btn-act" style="background:var(--success); color:white; border:none;" onclick="updateFollowStatus('${c.c_no}', ${c.row_index}, 'set_normal', 'ติดตามสำเร็จ?', 'กลับเป็นสถานะปกติ', '#0097e6')"><i class="fas fa-check"></i> สำเร็จ (ปกติ)</button>
+                        <button class="btn-act" style="background:#34495e; color:white; border:none;" onclick="updateFollowStatus('${c.c_no}', ${c.row_index}, 'set_letter_sent', 'ส่งจดหมายต่อ?', 'เปลี่ยนเป็นส่งจดหมาย', '#34495e')"><i class="fas fa-envelope"></i> ส่งจดหมายต่อ</button>
+                        <button class="btn-act" style="background:var(--dark); color:white; border:none; grid-column: 1 / -1;" onclick="updateFollowStatus('${c.c_no}', ${c.row_index}, 'set_bad_debt', 'ยืนยันเป็นหนี้เสีย?', 'บันทึกเป็นหนี้เสีย', '#330000')"><i class="fas fa-skull"></i> ติดตามไม่ได้ (หนี้เสีย)</button>
+                    `;
+                } else {
+                    gridClass = 'grid-closed-actions';
+                    actionButtonsHtml = `<button class="user-checkbox-btn btn-disabled" style="grid-column: 1 / -1;" disabled><i class="fas fa-hourglass-half"></i> รอส่วนกลางอัปเดตสถานะลงพื้นที่</button>`;
+                }
+            } else if (c.status === 'Letter_Sent') {
+                if (isAdmin) {
+                    gridClass = 'grid-closed-actions';
+                    actionButtonsHtml = `
+                        <button class="btn-act" style="background:var(--success); color:white; border:none;" onclick="updateFollowStatus('${c.c_no}', ${c.row_index}, 'set_normal', 'ติดตามสำเร็จ?', 'กลับเป็นสถานะปกติ', '#0097e6')"><i class="fas fa-check"></i> สำเร็จ (ปกติ)</button>
+                        <button class="btn-act" style="background:var(--dark); color:white; border:none;" onclick="updateFollowStatus('${c.c_no}', ${c.row_index}, 'set_bad_debt', 'ยืนยันเป็นหนี้เสีย?', 'บันทึกเป็นหนี้เสีย', '#330000')"><i class="fas fa-skull"></i> ติดตามไม่ได้ (หนี้เสีย)</button>
+                    `;
+                } else {
+                    gridClass = 'grid-closed-actions';
+                    actionButtonsHtml = `<button class="user-checkbox-btn btn-disabled" style="grid-column: 1 / -1;" disabled><i class="fas fa-hourglass-half"></i> รอส่วนกลางอัปเดตสถานะจดหมาย</button>`;
+                }
+            } else if (isClosed || c.status === 'Cancel' || c.status === 'BadDebt') {
                 gridClass = 'grid-closed-actions';
                 actionButtonsHtml = `${infoBtn}${contractBtn}`;
             } else {
@@ -804,37 +890,89 @@
         async function userReqPostpone(cNo) { Swal.fire({title:'ขอเลื่อนนัด', input:'date'}).then(r=>{if(r.value) sendUserRequest('request_postpone', cNo, {new_date:r.value});}); }
         async function userAddNote(cNo) { Swal.fire({input:'text', title:'บันทึก'}).then(r=>{if(r.value) sendUserRequest('add_daily_note', cNo, {note:r.value});}); }
 
-        async function adminApprove(cNo, rowIndex, reqDate, details, type) { 
-            let title = type === 'close' ? 'อนุมัติปิดยอด?' : 'อนุมัติรายการ?';
-            let actionName = type === 'close' ? 'close_account' : 'approve_contract';
-            let confirmBtn = type === 'close' ? 'ยืนยันปิดยอด' : 'อนุมัติ';
-            
+        // ฟังก์ชันจัดการสถานะติดตาม (ลงพื้นที่ / ส่งจดหมาย)
+        function updateFollowStatus(cNo, rowIndex, actionType, title, confirmText, confirmColor) {
             Swal.fire({
                 title: title,
-                html: `<div style="font-size:14px; color:var(--gray); margin-bottom:10px;">เลขสัญญา: ${cNo}</div><div style="font-size:13px; text-align:left; background:#f4f6f8; padding:10px; border-radius:8px;">${details || 'ไม่มีรายละเอียดเพิ่มเติม'}</div>`,
+                input: 'text',
+                inputPlaceholder: 'หมายเหตุเพิ่มเติม (ถ้ามี)...',
                 showCancelButton: true,
-                showDenyButton: true,
-                confirmButtonText: confirmBtn,
-                denyButtonText: 'ปฏิเสธ (ตีกลับ)',
-                cancelButtonText: 'ปิด',
-                confirmButtonColor: '#0097e6',
-                denyButtonColor: '#b30000'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    executeAction({ action: actionName, row_index: rowIndex, c_no: cNo });
-                } else if (result.isDenied) {
-                    Swal.fire({
-                        title: 'เหตุผลที่ปฏิเสธ',
-                        input: 'text',
-                        showCancelButton: true,
-                        confirmButtonText: 'ยืนยันตีกลับ',
-                        cancelButtonText: 'ยกเลิก',
-                        confirmButtonColor: '#b30000'
-                    }).then((val) => {
-                        if (val.isConfirmed) {
-                            executeAction({ action: 'reject_request', row_index: rowIndex, reason: val.value || 'ไม่ระบุ' });
-                        }
-                    });
+                confirmButtonText: confirmText,
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: confirmColor
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    executeAction({ action: actionType, row_index: rowIndex, c_no: cNo, reason: res.value || 'อัปเดตสถานะติดตาม' });
+                }
+            });
+        }
+
+        async function adminApprove(cNo, rowIndex, reqDate, details, type) { 
+            if (type === 'close') {
+                Swal.fire({
+                    title: 'อนุมัติปิดยอด?',
+                    html: `<div style="font-size:14px; color:var(--gray); margin-bottom:10px;">เลขสัญญา: ${cNo}</div><div style="font-size:13px; text-align:left; background:#f4f6f8; padding:10px; border-radius:8px;">${details || 'ไม่มีรายละเอียดเพิ่มเติม'}</div>`,
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'ยืนยันปิดยอด',
+                    denyButtonText: 'ปฏิเสธ (ตีกลับ)',
+                    cancelButtonText: 'ปิด',
+                    confirmButtonColor: '#0097e6',
+                    denyButtonColor: '#b30000'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeAction({ action: 'close_account', row_index: rowIndex, c_no: cNo });
+                    } else if (result.isDenied) {
+                        promptReject(rowIndex);
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'จัดการคำขอติดตาม/เลื่อนนัด',
+                    html: `<div style="font-size:14px; color:var(--gray); margin-bottom:10px;">เลขสัญญา: ${cNo}</div>
+                           <div style="font-size:13px; text-align:left; background:#f4f6f8; padding:10px; border-radius:8px; margin-bottom:15px;">${details || 'ไม่มีรายละเอียดเพิ่มเติม'}</div>
+                           <select id="approve-action-type" class="swal2-select" style="width:100%; font-size:14px; margin-top:0;">
+                               <option value="set_normal">✅ อนุมัติ -> กลับเป็นสถานะ 'ปกติ'</option>
+                               <option value="set_field_visit">🏠 อนุมัติ -> เปลี่ยนเป็น 'ลงพื้นที่ติดตาม'</option>
+                               <option value="set_letter_sent">✉️ อนุมัติ -> เปลี่ยนเป็น 'ส่งจดหมายทวงถาม'</option>
+                               <option value="set_bad_debt">☠️ อนุมัติ -> เปลี่ยนเป็น 'หนี้เสีย (Blacklist)'</option>
+                           </select>
+                           <input type="text" id="approve-note" class="swal2-input" placeholder="หมายเหตุให้เซลล์ (ถ้ามี)..." style="width:100%; box-sizing:border-box; margin-top:10px;">`,
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'บันทึกการอนุมัติ',
+                    denyButtonText: 'ปฏิเสธ (ตีกลับ)',
+                    cancelButtonText: 'ปิด',
+                    confirmButtonColor: '#0097e6',
+                    denyButtonColor: '#b30000',
+                    preConfirm: () => {
+                        return {
+                            actionType: document.getElementById('approve-action-type').value,
+                            note: document.getElementById('approve-note').value
+                        };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        let actionType = result.value.actionType;
+                        executeAction({ action: actionType, row_index: rowIndex, c_no: cNo, reason: result.value.note || 'อนุมัติตามคำขอ' });
+                    } else if (result.isDenied) {
+                        promptReject(rowIndex);
+                    }
+                });
+            }
+        }
+
+        function promptReject(rowIndex) {
+            Swal.fire({
+                title: 'เหตุผลที่ปฏิเสธ',
+                input: 'text',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันตีกลับ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#b30000'
+            }).then((val) => {
+                if (val.isConfirmed) {
+                    executeAction({ action: 'reject_request', row_index: rowIndex, reason: val.value || 'ไม่ระบุ' });
                 }
             });
         }
@@ -934,8 +1072,8 @@
         function userProfile() { Swal.fire({ title: 'ข้อมูลผู้ใช้', html: `<b>${currentUser.name}</b><br>สถานะ: ${currentUser.role}`, showDenyButton: true, confirmButtonText: 'เปลี่ยนรหัสผ่าน', denyButtonText: 'ปิด' }).then(r => { if(r.isConfirmed) changePass(); }); }
         async function changePass() { const { value: p } = await Swal.fire({ title: 'ตั้งรหัสใหม่', input: 'password' }); if(p) { await fetch(API_URL, { method:'POST', body:JSON.stringify({action:'change_password', username:currentUser.username, new_pass:p}) }); Swal.fire('สำเร็จ'); } }
 
-        function printReport() { /* คงฟังก์ชันเดิม */ }
-		function showShopTransferReport() { /* คงฟังก์ชันเดิม */ }
+        function printReport() {}
+        function showShopTransferReport() {}
         
         async function userReqFollow(cNo) { 
             const { value: followType } = await Swal.fire({
@@ -943,8 +1081,8 @@
                 input: 'select',
                 inputOptions: {
                     'add_daily_note': 'บันทึกการติดตามทั่วไป',
+                    'req_visit': 'ขอลงพื้นที่ติดตามที่พัก',
                     'req_letter': 'ขอส่งจดหมายทวงถาม',
-                    'req_visit': 'ขอลงพื้นที่ติดตาม',
                     'req_bad_debt': 'แจ้งหนี้เสีย / Blacklist'
                 },
                 showCancelButton: true,

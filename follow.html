@@ -287,7 +287,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbz7zGBKq4eEGPi5TAo3DhqrPZa4zpYmaaGsVP-rw_5Un6t3G-lwAe6zwLvrNmttLkBR/exec'; 
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyhhCgXDlNeO-rc1Z84QgmNvgQl7mldLRiuBB-8K0vXoZ3yb8f5kmN9SbWNdgj6MUZB/exec'; 
         let currentUser = null;
         let currentTrackingData = [], filteredData = [], globalSummary = {};
         
@@ -642,10 +642,12 @@
                         if (currentUser.role === 'admin' || !isPendingStatus) contractGroups.pending.push(item); 
                     } else if (isPostponedToToday) { 
                         contractGroups.postpone.push(item); 
+                    } else if (isTargetToday) { 
+                        item.overdue_count = 0;
+                        item.worksheetStatus = 'ปกติ';
+                        contractGroups.normal.push(item); 
                     } else if (isOverdue) { 
                         contractGroups.overdue.push(item); 
-                    } else if (isTargetToday) { 
-                        contractGroups.normal.push(item); 
                     }
                 });
             }

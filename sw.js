@@ -1,4 +1,4 @@
-const CACHE_NAME = 'notty-app-system-v18'; // <--- เปลี่ยนเลขตรงนี้ทุกครั้งที่อัปเดตเว็บ (v3, v4, v5...)
+const CACHE_NAME = 'notty-app-system-v19'; // <--- เปลี่ยนเลขตรงนี้ทุกครั้งที่อัปเดตเว็บ (v3, v4, v5...)
 const urlsToCache = [
   './',
   './index.html',

@@ -597,11 +597,20 @@
                 data.contracts.forEach(c => {
                     const amount = parseFloat(c.amount || 0);
                     const isPaid = ['Paid', 'Close', 'รอปิดยอด', 'Cancel'].includes(c.status);
-                    const isPostponedToToday = (c.postpone_date === selectedDateThai);
-                    const isDueToday = (c.due_date === selectedDateThai);
-                    const hasPostpone = (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "");
-                    const isPendingStatus = ['Pending_Approve', 'รอตรวจสอบ', 'รอปิดยอด'].includes(c.status);
-                    let isTargetToday = (isPostponedToToday) || (isDueToday && !hasPostpone);
+const isPostponedToToday = (c.postpone_date === selectedDateThai);
+const isDueToday = (c.due_date === selectedDateThai);
+const hasPostpone = (c.postpone_date && c.postpone_date !== "-" && c.postpone_date !== "");
+const isPendingStatus = ['Pending_Approve', 'รอตรวจสอบ', 'รอปิดยอด'].includes(c.status);
+
+// --- เริ่มส่วนที่เพิ่มใหม่: ตรวจสอบสัญญาค้างชำระ ที่ตรงกับรอบบิลในวันนี้ ---
+const selectedDay = selectedDateThai ? selectedDateThai.split('/')[0] : "";
+const dueDay = c.due_date ? c.due_date.split('/')[0] : "";
+// เช็คว่า ค้างชำระอยู่ (> 0) และ "วันที่" ของรอบบิล ตรงกับ "วันที่" ที่เลือกดูข้อมูล
+const isRecurringDueToday = (c.overdue_count > 0 && dueDay === selectedDay);
+// -------------------------------------------------------------
+
+// นำ isRecurringDueToday มารวมในเงื่อนไขการจัดลงกลุ่ม "ปกติ" ของวันนี้
+let isTargetToday = (isPostponedToToday) || (isDueToday && !hasPostpone) || (isRecurringDueToday && !hasPostpone);
                     
                     if (isTargetToday && isPaid && c.status !== 'Cancel') strictDailyCollected += amount;
                     if (c.due_date) { const parts = c.due_date.split('/'); if(parts.length === 3) { const cMonthStr = `${parts[2]}-${parts[1]}`; if (cMonthStr === selectedMonthStr && isPaid && c.status !== 'Cancel') strictMonthlyCollected += amount; } }
@@ -643,9 +652,11 @@
                     } else if (isPostponedToToday) { 
                         contractGroups.postpone.push(item); 
                     } else if (isTargetToday) { 
-                        item.overdue_count = 0;
-                        item.worksheetStatus = 'ปกติ';
-                        contractGroups.normal.push(item); 
+    if (!isRecurringDueToday) { 
+        item.overdue_count = 0; // รีเซ็ตเฉพาะสัญญาปกติที่ไม่เคยค้าง
+    }
+    item.worksheetStatus = 'ปกติ';
+    contractGroups.normal.push(item);  
                     } else if (isOverdue) { 
                         contractGroups.overdue.push(item); 
                     }
@@ -674,7 +685,7 @@
             });
 
             if (contractGroups.pending.length > 0 && currentUser.role === 'admin') { polyContainer.innerHTML += createPolygonHtml('pending', 'รอตรวจสอบ', contractGroups.pending.length, 'poly-bg-pending', 'fas fa-clock'); }
-            polyContainer.innerHTML += createPolygonHtml('normal', 'ปกติ (วันนี้)', contractGroups.normal.length, 'poly-bg-normal', 'fas fa-calendar-check');
+            polyContainer.innerHTML += createPolygonHtml('normal', 'วันนี้', contractGroups.normal.length, 'poly-bg-normal', 'fas fa-calendar-check');
             polyContainer.innerHTML += createPolygonHtml('postpone', 'เลื่อนนัด', contractGroups.postpone.length, 'poly-bg-postpone', 'fas fa-history');
             polyContainer.innerHTML += createPolygonHtml('overdue', 'เกินกำหนด', contractGroups.overdue.length, 'poly-bg-overdue', 'fas fa-exclamation-circle');
             polyContainer.innerHTML += createPolygonHtml('visit', 'ลงพื้นที่ติดตาม', contractGroups.visit.length, 'poly-bg-visit', 'fas fa-motorcycle');
